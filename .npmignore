@@ -3,6 +3,9 @@
 /.pnp
 .pnp.js
 
+# source
+/src
+
 # testing
 /coverage
 
@@ -21,6 +24,7 @@
 .prettierrc
 
 package-lock.json
+yarn.lock
 tsconfig.json
 
 # log
@@ -28,6 +32,3 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# shell
-publish.bat
-publish.sh
