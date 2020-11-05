@@ -3,8 +3,6 @@ Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数�
 
 Lem支持Typescript和Javascript。
 
-未来，考虑基于Lem另外构建完整的脚手架。
-
 ## 安装依赖包
 
     npm i -S lemjs
