@@ -3,6 +3,8 @@ Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数�
 
 Lem支持Typescript和Javascript。
 
+https://github.com/risma-cc/lemjs
+
 ## 安装依赖包
 
     npm i -S lemjs
@@ -46,37 +48,11 @@ Lem支持Typescript和Javascript。
     });
 
 ### 使用数据模型
-#### React类组件
-
-    export default class MyComponent extends Component {
-        state = {
-            a: 0,
-        }
-        /* 数据更新事件的回调函数 */
-        updated = (state: A) => {
-            this.setState({ a: state.a });
-        }
-
-        componentDidMount() {
-            /* 订阅数据更新事件 */
-            model.subscribeUpdate(this.updated);
-        }
-
-        componentWillUnmount() {
-            /* 退订数据更新事件 */
-            model.unsubscribeUpdate(this.updated);
-        }
-
-        render() {
-            return (<div>a is {this.state.a}</div>);
-        }
-    }
-
 #### React函数组件，使用Hooks
 
     export default () => {
         /* 类Hooks的模型使用方法，此时不需要订阅数据更新事件，已在useModel中实现。 */
-        const a = useModel(model);
+        const state = useModel(model);
         /* 模型任务加载事件的回调函数 */
         const onLoading = (on: boolean, action: string) => {
             if (on) {
@@ -84,10 +60,10 @@ Lem支持Typescript和Javascript。
             } else {
                 /* 关闭加载动画组件 */
             }
-        }
+        };
 
         useEffect(() => {
-            /* 订阅模型任务加载事件 */
+            /* 如果需要控制Loading组件显示，订阅模型任务加载事件 */
             model.subscribeLoading(onLoading);
             return () => {
                 /* 退订模型任务加载事件 */
@@ -95,7 +71,43 @@ Lem支持Typescript和Javascript。
             }
         }, [a]);
 
-        return (<div>a is {this.state.a}</div>);
+        return (<div>a is {state.a}</div>);
+    }
+
+#### React类组件，不使用Hooks
+
+    export default class MyComponent extends Component {
+        state = model.state;
+        /* 数据更新事件的回调函数 */
+        updated = (state: A) => {
+            this.setState({ a: state.a });
+        };
+        /* 模型任务加载事件的回调函数 */
+        onLoading = (on: boolean, action: string) => {
+            if (on) {
+                /* 显示加载动画组件 */
+            } else {
+                /* 关闭加载动画组件 */
+            }
+        };
+
+        componentDidMount() {
+            /* 必须订阅数据更新事件 */
+            model.subscribeUpdate(this.updated);
+            /* 如果需要控制Loading组件显示，订阅模型任务加载事件 */
+            model.subscribeLoading(onLoading);
+        }
+
+        componentWillUnmount() {
+            /* 退订数据更新事件 */
+            model.unsubscribeUpdate(this.updated);
+            /* 退订模型任务加载事件 */
+            model.unsubscribeLoading(onLoading);
+        }
+
+        render() {
+            return (<div>a is {this.state.a}</div>);
+        }
     }
 
 ## Service

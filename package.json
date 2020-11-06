@@ -1,7 +1,7 @@
 {
   "name": "lemjs",
   "version": "0.1.1",
-  "description": "LemJS",
+  "description": "LemJS - A lightweight frontend application framework",
   "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf ./dist",
