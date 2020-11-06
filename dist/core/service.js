@@ -78,18 +78,10 @@ var HttpServiceImpl = /** @class */ (function () {
                     case 1:
                         _a.trys.push([1, 5, , 8]);
                         request = {
-                            url: httpAPI.request.url,
-                            params: __assign(__assign({}, this.defaultParams), httpAPI.request.params),
-                            config: __assign(__assign({}, this.defaultConfig), httpAPI.request.config)
+                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.request.url),
+                            params: __assign(__assign(__assign({}, this.defaultParams), httpAPI.request.params), options === null || options === void 0 ? void 0 : options.params),
+                            config: __assign(__assign(__assign({}, this.defaultConfig), httpAPI.request.config), options === null || options === void 0 ? void 0 : options.config)
                         };
-                        if (options) {
-                            request.params = __assign(__assign({}, request.params), options.params);
-                            request.config = __assign(__assign({}, request.config), options.config);
-                            if (options.url) {
-                                request.url = options.url;
-                            }
-                        }
-                        request.url = this.baseURL + request.url;
                         // If mock is enabled and a mock handler is defined, skips HTTP request and response
                         if (enableMock) {
                             mockHandler = httpAPI['mock'];

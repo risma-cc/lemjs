@@ -45,6 +45,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+export function JsonBody(data) {
+    return JSON.stringify(data);
+}
+export function FormBody() {
+    return new FormData;
+}
 var HttpClientImpl = /** @class */ (function () {
     function HttpClientImpl() {
         this.config = {
@@ -53,7 +59,6 @@ var HttpClientImpl = /** @class */ (function () {
             headers: new Headers(),
         };
     }
-    // constructor() {}
     HttpClientImpl.prototype.setHeader = function (name, value) {
         this.config.headers.set(name, value);
     };
@@ -61,34 +66,36 @@ var HttpClientImpl = /** @class */ (function () {
         this.config.headers.delete(name);
     };
     HttpClientImpl.prototype.request = function (request) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var query, req, resp, contentType, l, error;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var b, query, req, resp, contentType, l, error;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
+                        b = (_a = request.config) === null || _a === void 0 ? void 0 : _a.body;
                         query = (new URLSearchParams(request.params)).toString();
                         req = new Request(request.url + (query.length > 0 ? ('?' + query) : ''), request.config);
                         return [4 /*yield*/, fetch(req, this.config)];
                     case 1:
-                        resp = _a.sent();
+                        resp = _b.sent();
                         if (!(resp.status >= 200 && resp.status < 300)) return [3 /*break*/, 11];
                         contentType = resp.headers.get('Content-Type');
                         if (!(contentType != null)) return [3 /*break*/, 9];
                         if (!(contentType.indexOf('text') > -1)) return [3 /*break*/, 3];
                         return [4 /*yield*/, resp.text()];
-                    case 2: return [2 /*return*/, _a.sent()];
+                    case 2: return [2 /*return*/, _b.sent()];
                     case 3:
                         if (!(contentType.indexOf('form') > -1)) return [3 /*break*/, 5];
                         return [4 /*yield*/, resp.formData()];
-                    case 4: return [2 /*return*/, _a.sent()];
+                    case 4: return [2 /*return*/, _b.sent()];
                     case 5:
                         if (!(contentType.indexOf('json') > -1)) return [3 /*break*/, 7];
                         return [4 /*yield*/, resp.json()];
-                    case 6: return [2 /*return*/, _a.sent()];
+                    case 6: return [2 /*return*/, _b.sent()];
                     case 7: return [4 /*yield*/, resp.blob()];
-                    case 8: return [2 /*return*/, _a.sent()];
+                    case 8: return [2 /*return*/, _b.sent()];
                     case 9: return [4 /*yield*/, resp.text()];
-                    case 10: return [2 /*return*/, _a.sent()];
+                    case 10: return [2 /*return*/, _b.sent()];
                     case 11:
                         if (resp.status === 301 || resp.status === 302) { // Redirect
                             l = resp.headers.get('Location');

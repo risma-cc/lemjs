@@ -34,18 +34,10 @@ class HttpServiceImpl implements HttpService {
         try {
             // Make a request object
             let request = {
-                url: httpAPI.request.url,
-                params: { ...this.defaultParams, ...httpAPI.request.params },
-                config: { ...this.defaultConfig, ...httpAPI.request.config }
+                url: this.baseURL + (options?.url ? options.url : httpAPI.request.url),
+                params: { ...this.defaultParams, ...httpAPI.request.params, ...options?.params },
+                config: { ...this.defaultConfig, ...httpAPI.request.config, ...options?.config }
             };
-            if (options) {
-                request.params = { ...request.params, ...options.params };
-                request.config = { ...request.config, ...options.config };
-                if (options.url) {
-                    request.url = options.url;
-                }
-            }
-            request.url = this.baseURL + request.url;
 
             // If mock is enabled and a mock handler is defined, skips HTTP request and response
             if (enableMock) {

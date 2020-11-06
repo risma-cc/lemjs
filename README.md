@@ -31,13 +31,11 @@ https://github.com/risma-cc/lemjs
         update: {
             c: (payload: any, state: A): A => {
                 let { x } = payload;
-                return {
-                    a: a + x,
-                };
+                return { a: a + x };
             },
         },
         /* 异步任务 */
-        put: {
+        run: {
             d: async (payload: any, state: A): Promise<void> => {
                 /* 通常此处先通过HttpService的fetch请求HttpAPI，从后端获取数据。 */
 				...
@@ -51,7 +49,7 @@ https://github.com/risma-cc/lemjs
 #### React函数组件，使用Hooks
 
     export default () => {
-        /* 类Hooks的模型使用方法，此时不需要订阅数据更新事件，已在useModel中实现。 */
+        /* 类Hooks的模型使用方法。 */
         const state = useModel(model);
         /* 模型任务加载事件的回调函数 */
         const onLoading = (on: boolean, action: string) => {
@@ -71,16 +69,25 @@ https://github.com/risma-cc/lemjs
             }
         }, [a]);
 
-        return (<div>a is {state.a}</div>);
+        return (
+            <div>
+                <h1>a is {state.a}</h1>
+                /* 调用模型的query/update/run方法进行数据访问与处理。 */
+                <a onClick={() => model.run('d', {})}></a>
+            </div>
+        );
     }
 
 #### React类组件，不使用Hooks
 
     export default class MyComponent extends Component {
-        state = model.state;
+        constructor(props) {
+            super(props);
+            this.state = model.getState();
+        }
         /* 数据更新事件的回调函数 */
-        updated = (state: A) => {
-            this.setState({ a: state.a });
+        onUpdate = (state: A) => {
+            this.setState(state);
         };
         /* 模型任务加载事件的回调函数 */
         onLoading = (on: boolean, action: string) => {
@@ -93,20 +100,26 @@ https://github.com/risma-cc/lemjs
 
         componentDidMount() {
             /* 必须订阅数据更新事件 */
-            model.subscribeUpdate(this.updated);
+            model.subscribeUpdate(this.onUpdate);
             /* 如果需要控制Loading组件显示，订阅模型任务加载事件 */
-            model.subscribeLoading(onLoading);
+            model.subscribeLoading(this.onLoading);
         }
 
         componentWillUnmount() {
             /* 退订数据更新事件 */
-            model.unsubscribeUpdate(this.updated);
+            model.unsubscribeUpdate(this.onUpdate);
             /* 退订模型任务加载事件 */
-            model.unsubscribeLoading(onLoading);
+            model.unsubscribeLoading(this.onLoading);
         }
 
         render() {
-            return (<div>a is {this.state.a}</div>);
+            return (
+                <div>
+                    <h1>a is {this.state.a}</h1>
+                    /* 调用模型的query/update/run方法进行数据访问与处理。 */
+                    <a onClick={() => model.run('d', {})}></a>
+                </div>
+            );
         }
     }
 
@@ -115,7 +128,11 @@ https://github.com/risma-cc/lemjs
 
     const myAPIs = {
         'hello': {
-            /* 接口请求，包括URL路径、URL参数、配置属性（参考fetch的RequestInit） */
+            /*
+             * 接口请求，包括URL路径、URL参数、配置选项（参考fetch的RequestInit）
+             * 备注：在Service、API以及fetch都可以指定接口请求的各个属性，他们会自动合并。
+             * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再API、最后Service。
+             */
             request: {
                 url: '/hello',
                 // params: {
@@ -145,10 +162,12 @@ https://github.com/risma-cc/lemjs
     const service = makeHttpService({
         /* 统一的URL前缀 */
         baseURL: 'http://a.b.c/api',
-        /* 默认URL参数，所有请求都自动追加。 */
+        /* 默认URL参数，所有请求都自动加上。 */
         defaultParams: {
             'ver': '1.0.0'
         },
+        /* 默认配置选项，所有请求都自动加上。 */
+        defaultConfig: { },
         httpAPIs: myAPIs,
     });
 

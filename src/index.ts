@@ -8,30 +8,25 @@ export interface ModelInit<T> {
     state: T;
 
     /*!
-     * query: Involves functions of query actions.
+     * query: Defines functions of query actions.
      */
     query: Record<symbol | string, (payload: {}, state: T) => any>;
 
     /*!
-     * update: Involves functions of update actions whose returning values will be set to the state.
+     * update: Defines functions of update actions whose returning values will be set to the state.
      */
     update: Record<symbol | string, (payload: {}, state: T) => T>;
 
     /*!
-     * put: Involves functions of asynchronous actions.
+     * run: Defines functions of asynchronous task actions.
      */
-    put: Record<symbol | string, (payload: {}, state: T) => Promise<void>>;
+    run: Record<symbol | string, (payload: {}, state: T) => Promise<void>>;
 }
 
 /*!
  * Model: The model for managing shared stateful data
  */
 export interface Model<T> {
-    /*!
-     * state: The stateful values
-     */
-    state: T;
-
     /*!
      * query: Dispatches a synchronous action to query the state.
      */
@@ -43,9 +38,14 @@ export interface Model<T> {
     update: (action: string, payload: any) => T;
 
     /*!
-     * put: Dispatches an asynchronous action.
+     * run: Dispatches an asynchronous task action.
      */
-    put: (action: string, payload: any) => Promise<void>;
+    run: (action: string, payload: any) => Promise<void>;
+
+    /*!
+     * getState: Returns the values of state
+     */
+    getState: () => T;
 
     /*!
      * subscribe: Subscribes the update event.
@@ -68,18 +68,24 @@ export interface Model<T> {
     unsubscribeLoading: (callback: (on: boolean, action: string) => void) => void;
 }
 
-export { makeModel } from './core/model';
+export { makeModel, useModel } from './core/model';
 
 /*!
- * HttpParams: similar to URLSearchParams.
+ * HttpParams: Similar to URLSearchParams.
  */
 export type HttpParams = Record<string, string>;
 
 /*!
- * HttpConfig: configuration options of HTTP request.
+ * HttpBodyInit: Initial values of HTTP body.
+ */
+export type HttpBody = BodyInit;
+
+export { JsonBody, FormBody } from './core/http';
+
+/*!
+ * HttpConfig: Configuration options of HTTP request.
  */
 export interface HttpConfig extends RequestInit {
-    
 }
 
 /*!

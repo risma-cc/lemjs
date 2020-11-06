@@ -1,13 +1,32 @@
 import { HttpClient, HttpConfig, HttpParams, HttpRequest } from '../index';
 
+export function JsonBody(data: object): string {
+    return JSON.stringify(data);
+}
+
+export function FormBody(name: string, value: string | Blob, fileName?: string): FormData {
+    let data = new FormData;
+    data.append(name, value, fileName);
+    return data;
+}
+
+export function FileBody(name: string, filePath: string): FormData {
+    let data = new FormData;
+    let file = new ;
+    let blob = new Blob;
+    file.onload = () => {
+        data.append(name, blob, FileReader.name);
+        return data;
+    }
+    FileReaderSync.readAsArrayBuffer(blob);
+}
+
 class HttpClientImpl implements HttpClient {
     config: HttpConfig = {
         // mode: 'cors',
         // credentials: "same-origin",
         headers: new Headers(),
     };
-
-    // constructor() {}
 
     setHeader(name: string, value: string) {
         (this.config.headers as Headers).set(name, value);
@@ -18,6 +37,7 @@ class HttpClientImpl implements HttpClient {
     }
 
     async request(request: HttpRequest) {
+        let b = request.config?.body
         let query = (new URLSearchParams(request.params)).toString();
         let req = new Request(request.url + (query.length > 0 ? ('?' + query) : ''), request.config);
         let resp = await fetch(req, this.config);
