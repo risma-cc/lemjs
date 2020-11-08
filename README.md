@@ -23,6 +23,7 @@ https://github.com/risma-cc/lemjs
         /* 数据初始化 */
         state: {
             a: 0,
+            answer: '',
         },
         /* 查询方法 */
         query: {
