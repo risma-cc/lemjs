@@ -160,7 +160,7 @@ https://github.com/risma-cc/lemjs
     let result = await myClient.fetch('hello', { params: { 'myname': 'Michael' }});
 
 ### 自定义Service
-绝大部分实际情况中，Model数据都是先调用HTTP服务接口，根据响应数据来进行更新的。因此，建议定义一层Service对象来实现不同的业务逻辑，以封装HTTP API调用以及Model数据更新，并在View层（React组件）调用。
+绝大部分实际情况中，Model数据都是先调用HTTP服务接口，根据响应数据来进行更新的。因此，建议定义一层Service方法来实现不同的业务逻辑，以封装HTTP API调用以及Model数据更新，并在View层（React组件）调用。
 
 *svc.ts*
 
