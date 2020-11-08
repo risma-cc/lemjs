@@ -1,5 +1,6 @@
 export { makeModel, useModel } from './core/model';
-export { JsonBody, FormBody } from './core/http';
+export { JsonBody, FormDataBody } from './core/http';
 ;
-export { makeHttpClient, getHttpClient } from './core/http';
-export { makeHttpService, enableMock } from './core/service';
+export { httpRequest, httpGet, httpPost } from './core/http';
+export { enableMock } from './core/http';
+export { makeHttpClient } from './core/http';

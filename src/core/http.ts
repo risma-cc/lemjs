@@ -1,98 +1,161 @@
-import { HttpClient, HttpConfig, HttpParams, HttpRequest } from '../index';
+import {
+    FormDataElement,
+    HttpRequest,
+    HttpAPI,
+    HttpClient,
+    HttpClientInit,
+    HttpConfig,
+    HttpParams,
+    HttpRequestOptions
+} from '../index';
 
+/*!
+ * JsonBody: Converts an object to a JSON string
+ */
 export function JsonBody(data: object): string {
     return JSON.stringify(data);
 }
 
-export function FormBody(name: string, value: string | Blob, fileName?: string): FormData {
-    let data = new FormData;
-    data.append(name, value, fileName);
-    return data;
+/*!
+ * FormDataBody: Converts elements to a FormData, e.g. file
+ */
+export function FormDataBody(elements: FormDataElement[]): FormData {
+    let body = new FormData;
+    elements.forEach(e => {
+        if (typeof e.value == 'string') {
+            body.append(e.name, e.value);
+        } else {
+            body.append(e.name, e.value, e.fileName);
+        }
+    });
+    return body;
 }
 
-export function FileBody(name: string, filePath: string): FormData {
-    let data = new FormData;
-    let file = new ;
-    let blob = new Blob;
-    file.onload = () => {
-        data.append(name, blob, FileReader.name);
-        return data;
+/*!
+ * httpRequest: Send an HTTP request and return a response
+ */
+export async function httpRequest(request: HttpRequest) {
+    let url = request.url;
+    let params = (typeof request.params == 'function') ? request.params() : request.params;
+    if (params) {
+        url += '?' + (new URLSearchParams(params)).toString();
     }
-    FileReaderSync.readAsArrayBuffer(blob);
+    let resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
+
+    // Check HTTP status and parse response
+    if (resp.status >= 200 && resp.status < 300) {
+        const contentType = resp.headers.get('Content-Type');
+        if (contentType != null) {
+            if (contentType.indexOf('text') > -1) {
+                return await resp.text();
+            }
+            if (contentType.indexOf('form') > -1) {
+                return await resp.formData();
+            }
+            if (contentType.indexOf('json') > -1) {
+                return await resp.json();
+            }
+            return await resp.blob();
+        }
+        return await resp.text();
+    }
+    if (resp.status === 301 || resp.status === 302) {   // Redirect
+        let l = resp.headers.get('Location')
+        window.location.assign(l == null ? '' : l);
+    }
+    const error = new Error(resp.statusText);
+    throw error;
+}
+
+/*!
+ * httpGet: Send an HTTP GET request and return a response
+ */
+export async function httpGet(url: string, params?: HttpParams, config?: HttpConfig) {
+    return await httpRequest({
+        url: url,
+        params: params,
+        config: { ...config, ...{ method: 'GET' } },
+    });
+}
+
+/*!
+ * httpPost: Send an HTTP POST request and return a response
+ */
+export async function httpPost(url: string, params?: HttpParams, config?: HttpConfig) {
+    return await httpRequest({
+        url: url,
+        params: params,
+        config: { ...config, ...{ method: 'POST' } },
+    });
+}
+
+/*！
+ * enableMock: Enable or disable mock handlers globaly.
+ */
+export let enableMock: boolean = true;
+
+/*！
+ * makeHttpClient: Create an HTTP client.
+ */
+export function makeHttpClient(init: HttpClientInit): HttpClient {
+    return new HttpClientImpl(init);
 }
 
 class HttpClientImpl implements HttpClient {
-    config: HttpConfig = {
-        // mode: 'cors',
-        // credentials: "same-origin",
-        headers: new Headers(),
-    };
+    baseURL: string;
+    defaultParams: HttpParams | (() => HttpParams);
+    defaultConfig: HttpConfig | (() => HttpConfig);
+    httpAPIs: Record<string, HttpAPI>;
 
-    setHeader(name: string, value: string) {
-        (this.config.headers as Headers).set(name, value);
+    constructor(init: HttpClientInit) {
+        this.baseURL = init.baseURL;
+        this.defaultParams = init.defaultParams ? init.defaultParams : {};
+        this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
+        this.httpAPIs = init.httpAPIs;
     }
 
-    deleteHeader(name: string) {
-        (this.config.headers as Headers).delete(name);
-    }
+    async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
+        var httpAPI;
+        try {
+            httpAPI = this.httpAPIs[api];console.log(httpAPI)
+        } catch(error) {
+            return Promise.reject('The API \"' + api + '\" does NOT exist');
+        }
+        try {
+            // Make a request object
+            let request = {
+                url: this.baseURL + (options?.url ? options.url : httpAPI.request.url),
+                params: {
+                    ...(typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
+                    ...(typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params,
+                    ...(typeof options?.params == 'function') ? options?.params() : options?.params,
+                },
+                config: {
+                    ...(typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
+                    ...(typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config,
+                    ...(typeof options?.config == 'function') ? options?.config() : options?.config,
+                }
+            };
 
-    async request(request: HttpRequest) {
-        let b = request.config?.body
-        let query = (new URLSearchParams(request.params)).toString();
-        let req = new Request(request.url + (query.length > 0 ? ('?' + query) : ''), request.config);
-        let resp = await fetch(req, this.config);
-
-        // Check HTTP status and parse response
-        if (resp.status >= 200 && resp.status < 300) {
-            const contentType = resp.headers.get('Content-Type');
-            if (contentType != null) {
-                if (contentType.indexOf('text') > -1) {
-                    return await resp.text();
+            // If mock is enabled and a mock handler is defined, skips HTTP request and response
+            if (enableMock) {
+                const mockHandler = httpAPI['mock'];
+                if (mockHandler != undefined) {
+                    return mockHandler(request);
                 }
-                if (contentType.indexOf('form') > -1) {
-                    return await resp.formData();
-                }
-                if (contentType.indexOf('json') > -1) {
-                    return await resp.json();
-                }
-                return await resp.blob();
             }
-            return await resp.text();
+            let data = await httpRequest(request);
+            let responseHanlder = httpAPI['response'];
+            if (responseHanlder) {
+                data = await responseHanlder(data, this);
+            }
+            return data;
+        } catch (error) {
+            let errorHanlder = httpAPI['error'];
+            if (errorHanlder) {
+                await errorHanlder(error, this);
+            }
+            return Promise.reject(error);
         }
-        if (resp.status === 301 || resp.status === 302) {   // Redirect
-            let l = resp.headers.get('Location')
-            window.location.assign(l == null ? '' : l);
-        }
-        const error = new Error(resp.statusText);
-        throw error;
     }
-
-    async get(url: string, params?: HttpParams, config?: HttpConfig) {
-        return await this.request({
-            url: url,
-            params: params,
-            config: { ...config, ...{ method: 'GET' } },
-        });
-    }
-
-    async post(url: string, params?: HttpParams, config?: HttpConfig) {
-        return await this.request({
-            url: url,
-            params: params,
-            config: { ...config, ...{ method: 'POST' } },
-        });
-    }
-}
-
-let httpClient: HttpClient | null = null;
-
-export function makeHttpClient(): HttpClient {
-    return new HttpClientImpl();
-}
-
-export function getHttpClient(): HttpClient {
-    if (httpClient === null) {
-        httpClient = new HttpClientImpl();
-    }
-    return httpClient;
 }
