@@ -52,9 +52,9 @@ export function JsonBody(data) {
     return JSON.stringify(data);
 }
 /*!
- * FormDataBody: Converts elements to a FormData, e.g. file
+ * FormBody: Converts elements to a FormData, e.g. file
  */
-export function FormDataBody(elements) {
+export function FormBody(elements) {
     var body = new FormData;
     elements.forEach(function (e) {
         if (typeof e.value == 'string') {
@@ -71,7 +71,7 @@ export function FormDataBody(elements) {
  */
 export function httpRequest(request) {
     return __awaiter(this, void 0, void 0, function () {
-        var url, params, resp, contentType, l, error;
+        var url, params, resp, contentType, l;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -106,8 +106,7 @@ export function httpRequest(request) {
                         l = resp.headers.get('Location');
                         window.location.assign(l == null ? '' : l);
                     }
-                    error = new Error(resp.statusText);
-                    throw error;
+                    return [2 /*return*/, Promise.reject(resp.statusText)];
             }
         });
     });
@@ -176,14 +175,14 @@ var HttpClientImpl = /** @class */ (function () {
                         catch (error) {
                             return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
                         }
-                        _a.label = 1;
-                    case 1:
-                        _a.trys.push([1, 5, , 8]);
                         request = {
                             url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.request.url),
                             params: __assign(__assign(__assign({}, (typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams), (typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params), (typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params),
                             config: __assign(__assign(__assign({}, (typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig), (typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config), (typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config)
                         };
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 5, , 8]);
                         // If mock is enabled and a mock handler is defined, skips HTTP request and response
                         if (enableMock) {
                             mockHandler = httpAPI['mock'];
@@ -196,7 +195,7 @@ var HttpClientImpl = /** @class */ (function () {
                         data = _a.sent();
                         responseHanlder = httpAPI['response'];
                         if (!responseHanlder) return [3 /*break*/, 4];
-                        return [4 /*yield*/, responseHanlder(data, this)];
+                        return [4 /*yield*/, responseHanlder(data, request)];
                     case 3:
                         data = _a.sent();
                         _a.label = 4;
@@ -205,7 +204,7 @@ var HttpClientImpl = /** @class */ (function () {
                         error_1 = _a.sent();
                         errorHanlder = httpAPI['error'];
                         if (!errorHanlder) return [3 /*break*/, 7];
-                        return [4 /*yield*/, errorHanlder(error_1, this)];
+                        return [4 /*yield*/, errorHanlder(error_1, request)];
                     case 6:
                         _a.sent();
                         _a.label = 7;

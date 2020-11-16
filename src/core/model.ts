@@ -45,7 +45,7 @@ class ModelImpl<T> implements Model<T> {
         return { ...this.state };
     }
 
-    query(action: string, payload: any): any {
+    query(action: string, payload?: any): any {
         try {
             return this._query[action](payload, this.state);
         } catch (error) {
@@ -53,7 +53,7 @@ class ModelImpl<T> implements Model<T> {
         }
     }
 
-    update(action: string, payload: any): T {
+    update(action: string, payload?: any): T {
         try {
             this.state = this._update[action](payload, this.state);
             this._eventUpdated.forEach(e => {

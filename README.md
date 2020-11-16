@@ -27,17 +27,17 @@ https://github.com/risma-cc/lemjs
         },
         /* 查询方法 */
         query: {
-            ab: (payload: any, state: A): any => {
+            'ab': (payload: any, state: A): any => {
                 return { a: state.a, b: 'B' };
             },
         },
         /* 更新方法 */
         update: {
-            add: (payload: any, state: A): A => {
+            'add': (payload: any, state: A): A => {
                 let { x } = payload;
                 return { a: a + x };
             },
-            set: (payload: any, state: A): A => {
+            'set': (payload: any, state: A): A => {
                 return { ...state, ...payload };
             },
         },
@@ -115,9 +115,9 @@ https://github.com/risma-cc/lemjs
                     method: ‘POST’,
                     /*
                      * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
-                     * 和FormDataBody(FormDataElement[])。如果是动态变化的，则使用函数方式返回。
+                     * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
                      */
-                    body: FormDataBody([
+                    body: FormBody([
                         {
                             name: 'avatar',
                             value: /* 文件Blob/File */,
@@ -127,12 +127,15 @@ https://github.com/risma-cc/lemjs
                 }
             },
             /* 响应处理，data根据Content-Type已转换成string、FormData、JSON对象或者blob。 */
-            response: async (data: any, service: HttpService) => {
+            response: (data: any, request: HttpRequest) => {
                 let { name } = data;
+                if (!name) {
+                    throw new Error('Wrong result');
+                }
                 return { answer: 'Hello ' + name };
             },
             /* 错误处理，包括网络失败、HTTP非200状态等。 */
-            error: async (error: Error, service: HttpService) => {
+            error: (error: Error, request: HttpRequest) => {
             },
             /* 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。 */
             mock: (request: HttpRequest) => {

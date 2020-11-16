@@ -1,5 +1,5 @@
 import {
-    FormDataElement,
+    FormElement,
     HttpRequest,
     HttpAPI,
     HttpClient,
@@ -17,9 +17,9 @@ export function JsonBody(data: object): string {
 }
 
 /*!
- * FormDataBody: Converts elements to a FormData, e.g. file
+ * FormBody: Converts elements to a FormData, e.g. file
  */
-export function FormDataBody(elements: FormDataElement[]): FormData {
+export function FormBody(elements: FormElement[]): FormData {
     let body = new FormData;
     elements.forEach(e => {
         if (typeof e.value == 'string') {
@@ -63,8 +63,7 @@ export async function httpRequest(request: HttpRequest) {
         let l = resp.headers.get('Location')
         window.location.assign(l == null ? '' : l);
     }
-    const error = new Error(resp.statusText);
-    throw error;
+    return Promise.reject(resp.statusText);
 }
 
 /*!
@@ -121,22 +120,23 @@ class HttpClientImpl implements HttpClient {
         } catch(error) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
-        try {
-            // Make a request object
-            let request = {
-                url: this.baseURL + (options?.url ? options.url : httpAPI.request.url),
-                params: {
-                    ...(typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
-                    ...(typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params,
-                    ...(typeof options?.params == 'function') ? options?.params() : options?.params,
-                },
-                config: {
-                    ...(typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
-                    ...(typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config,
-                    ...(typeof options?.config == 'function') ? options?.config() : options?.config,
-                }
-            };
 
+        // Make a request object
+        let request = {
+            url: this.baseURL + (options?.url ? options.url : httpAPI.request.url),
+            params: {
+                ...(typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
+                ...(typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params,
+                ...(typeof options?.params == 'function') ? options?.params() : options?.params,
+            },
+            config: {
+                ...(typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
+                ...(typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config,
+                ...(typeof options?.config == 'function') ? options?.config() : options?.config,
+            }
+        };
+
+        try {
             // If mock is enabled and a mock handler is defined, skips HTTP request and response
             if (enableMock) {
                 const mockHandler = httpAPI['mock'];
@@ -147,13 +147,13 @@ class HttpClientImpl implements HttpClient {
             let data = await httpRequest(request);
             let responseHanlder = httpAPI['response'];
             if (responseHanlder) {
-                data = await responseHanlder(data, this);
+                data = await responseHanlder(data, request);
             }
             return data;
         } catch (error) {
             let errorHanlder = httpAPI['error'];
             if (errorHanlder) {
-                await errorHanlder(error, this);
+                await errorHanlder(error, request);
             }
             return Promise.reject(error);
         }

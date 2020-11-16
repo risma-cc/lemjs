@@ -10,12 +10,12 @@ export interface ModelInit<T> {
     /*!
      * query: Defines functions of query actions.
      */
-    query: Record<symbol | string, (payload: {}, state: T) => any>;
+    query?: Record<symbol | string, (payload: {}, state: T) => any>;
 
     /*!
      * update: Defines functions of update actions whose returning values will be set to the state.
      */
-    update: Record<symbol | string, (payload: {}, state: T) => T>;
+    update?: Record<symbol | string, (payload: {}, state: T) => T>;
 }
 
 /*!
@@ -61,15 +61,15 @@ export type HttpParams = Record<string, string>;
 export type HttpConfig = RequestInit;
 
 /*!
- * FormDataElement: Element in form data
+ * FormElement: Element in form data
  */
-export interface FormDataElement {
+export interface FormElement {
     name: string,
     value: string | Blob,
     fileName?: string,
 }
 
-export { JsonBody, FormDataBody } from './core/http';
+export { JsonBody, FormBody } from './core/http';
 
 /*!
  * HttpRequest: HTTP rquest with a required url property.
@@ -96,8 +96,8 @@ export { httpRequest, httpGet, httpPost } from './core/http';
  */
 export interface HttpAPI {
     request: HttpRequest,
-    response?: (response: any, client: HttpClient) => any,
-    error?: (error: Error, client: HttpClient) => any,
+    response?: (response: any, request: HttpRequest) => any,
+    error?: (error: Error, request: HttpRequest) => any,
 
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock value.

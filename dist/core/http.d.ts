@@ -1,12 +1,12 @@
-import { FormDataElement, HttpRequest, HttpClient, HttpClientInit, HttpConfig, HttpParams } from '../index';
+import { FormElement, HttpRequest, HttpClient, HttpClientInit, HttpConfig, HttpParams } from '../index';
 /*!
  * JsonBody: Converts an object to a JSON string
  */
 export declare function JsonBody(data: object): string;
 /*!
- * FormDataBody: Converts elements to a FormData, e.g. file
+ * FormBody: Converts elements to a FormData, e.g. file
  */
-export declare function FormDataBody(elements: FormDataElement[]): FormData;
+export declare function FormBody(elements: FormElement[]): FormData;
 /*!
  * httpRequest: Send an HTTP request and return a response
  */
