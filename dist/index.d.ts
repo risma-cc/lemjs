@@ -84,10 +84,10 @@ export interface HttpAPI {
     error?: (error: Error, request: HttpRequest) => any;
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock value.
+     * When the environment variable NODE_ENV is "production" or MOCK_DISABLED is "true", it'll be ignored.
      */
     mock?: (request: HttpRequest) => any;
 }
-export { enableMock } from './core/http';
 /*!
  * HttpClientInit: Definition of an HTTP APIs client for initialization.
  */
@@ -107,9 +107,10 @@ export interface HttpClient {
     httpAPIs: Record<string, HttpAPI>;
     /*!
      * fetch: Asynchronous handler of the API request and response.
-     * URL: Join the base URL and a sub-path (fetch options‘ url preferred to HttpAPI's)
-     * Params: Combination of options' params, API's and client's default
-     * Config: Combination of options' config, API's and client's default
+     * Request:
+     *   URL: Join the base URL and a sub-path (fetch options‘ url preferred to HttpAPI's)
+     *   Params: Combination of options' params, API's and client's default
+     *   Config: Combination of options' config, API's and client's default
      */
     fetch: (api: string, options?: HttpRequestOptions) => Promise<any>;
 }

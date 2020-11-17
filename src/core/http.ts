@@ -89,11 +89,6 @@ export async function httpPost(url: string, params?: HttpParams, config?: HttpCo
 }
 
 /*！
- * enableMock: Enable or disable mock handlers globaly.
- */
-export let enableMock: boolean = true;
-
-/*！
  * makeHttpClient: Create an HTTP client.
  */
 export function makeHttpClient(init: HttpClientInit): HttpClient {
@@ -137,8 +132,9 @@ class HttpClientImpl implements HttpClient {
         };
 
         try {
-            // If mock is enabled and a mock handler is defined, skips HTTP request and response
-            if (enableMock) {
+            // In case of non-production env and mock enabled,
+            // if a mock handler is defined, skips HTTP request and response
+            if (process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true') {
                 const mockHandler = httpAPI['mock'];
                 if (mockHandler != undefined) {
                     return mockHandler(request);

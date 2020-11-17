@@ -146,10 +146,6 @@ export function httpPost(url, params, config) {
     });
 }
 /*！
- * enableMock: Enable or disable mock handlers globaly.
- */
-export var enableMock = true;
-/*！
  * makeHttpClient: Create an HTTP client.
  */
 export function makeHttpClient(init) {
@@ -183,8 +179,9 @@ var HttpClientImpl = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 5, , 8]);
-                        // If mock is enabled and a mock handler is defined, skips HTTP request and response
-                        if (enableMock) {
+                        // In case of non-production env and mock enabled,
+                        // if a mock handler is defined, skips HTTP request and response
+                        if (process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true') {
                             mockHandler = httpAPI['mock'];
                             if (mockHandler != undefined) {
                                 return [2 /*return*/, mockHandler(request)];

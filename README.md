@@ -137,7 +137,10 @@ https://github.com/risma-cc/lemjs
             /* 错误处理，包括网络失败、HTTP非200状态等。 */
             error: (error: Error, request: HttpRequest) => {
             },
-            /* 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。 */
+            /*
+             * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
+             * 当环境变量NODE_ENV为"production"或者MOCK_DISABLED为"true"时，mock将被忽略。
+             */
             mock: (request: HttpRequest) => {
                 return { answer: 'Hello Jack' };
             }
