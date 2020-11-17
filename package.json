@@ -1,12 +1,11 @@
 {
   "name": "lemjs",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "LemJS - A lightweight frontend application framework",
   "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf ./dist",
-    "prebuild": "npm run clean",
-    "build": "tsc",
+    "compile": "npm run clean && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -19,5 +18,8 @@
     "react": "^17.0.1",
     "rimraf": "^3.0.2",
     "typescript": "^4.0.5"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
   }
 }

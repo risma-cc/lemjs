@@ -45,98 +45,174 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+/*!
+ * JsonBody: Converts an object to a JSON string
+ */
+export function JsonBody(data) {
+    return JSON.stringify(data);
+}
+/*!
+ * FormBody: Converts elements to a FormData, e.g. file
+ */
+export function FormBody(elements) {
+    var body = new FormData;
+    elements.forEach(function (e) {
+        if (typeof e.value == 'string') {
+            body.append(e.name, e.value);
+        }
+        else {
+            body.append(e.name, e.value, e.fileName);
+        }
+    });
+    return body;
+}
+/*!
+ * httpRequest: Send an HTTP request and return a response
+ */
+export function httpRequest(request) {
+    return __awaiter(this, void 0, void 0, function () {
+        var url, params, resp, contentType, l;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    url = request.url;
+                    params = (typeof request.params == 'function') ? request.params() : request.params;
+                    if (params) {
+                        url += '?' + (new URLSearchParams(params)).toString();
+                    }
+                    return [4 /*yield*/, fetch(url, (typeof request.config == 'function') ? request.config() : request.config)];
+                case 1:
+                    resp = _a.sent();
+                    if (!(resp.status >= 200 && resp.status < 300)) return [3 /*break*/, 11];
+                    contentType = resp.headers.get('Content-Type');
+                    if (!(contentType != null)) return [3 /*break*/, 9];
+                    if (!(contentType.indexOf('text') > -1)) return [3 /*break*/, 3];
+                    return [4 /*yield*/, resp.text()];
+                case 2: return [2 /*return*/, _a.sent()];
+                case 3:
+                    if (!(contentType.indexOf('form') > -1)) return [3 /*break*/, 5];
+                    return [4 /*yield*/, resp.formData()];
+                case 4: return [2 /*return*/, _a.sent()];
+                case 5:
+                    if (!(contentType.indexOf('json') > -1)) return [3 /*break*/, 7];
+                    return [4 /*yield*/, resp.json()];
+                case 6: return [2 /*return*/, _a.sent()];
+                case 7: return [4 /*yield*/, resp.blob()];
+                case 8: return [2 /*return*/, _a.sent()];
+                case 9: return [4 /*yield*/, resp.text()];
+                case 10: return [2 /*return*/, _a.sent()];
+                case 11:
+                    if (resp.status === 301 || resp.status === 302) { // Redirect
+                        l = resp.headers.get('Location');
+                        window.location.assign(l == null ? '' : l);
+                    }
+                    return [2 /*return*/, Promise.reject(resp.statusText)];
+            }
+        });
+    });
+}
+/*!
+ * httpGet: Send an HTTP GET request and return a response
+ */
+export function httpGet(url, params, config) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, httpRequest({
+                        url: url,
+                        params: params,
+                        config: __assign(__assign({}, config), { method: 'GET' }),
+                    })];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+/*!
+ * httpPost: Send an HTTP POST request and return a response
+ */
+export function httpPost(url, params, config) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, httpRequest({
+                        url: url,
+                        params: params,
+                        config: __assign(__assign({}, config), { method: 'POST' }),
+                    })];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+/*！
+ * enableMock: Enable or disable mock handlers globaly.
+ */
+export var enableMock = true;
+/*！
+ * makeHttpClient: Create an HTTP client.
+ */
+export function makeHttpClient(init) {
+    return new HttpClientImpl(init);
+}
 var HttpClientImpl = /** @class */ (function () {
-    function HttpClientImpl() {
-        this.config = {
-            // mode: 'cors',
-            // credentials: "same-origin",
-            headers: new Headers(),
-        };
+    function HttpClientImpl(init) {
+        this.baseURL = init.baseURL;
+        this.defaultParams = init.defaultParams ? init.defaultParams : {};
+        this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
+        this.httpAPIs = init.httpAPIs;
     }
-    // constructor() {}
-    HttpClientImpl.prototype.setHeader = function (name, value) {
-        this.config.headers.set(name, value);
-    };
-    HttpClientImpl.prototype.deleteHeader = function (name) {
-        this.config.headers.delete(name);
-    };
-    HttpClientImpl.prototype.request = function (request) {
+    HttpClientImpl.prototype.fetch = function (api, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var query, req, resp, contentType, l, error;
+            var httpAPI, request, mockHandler, data, responseHanlder, error_1, errorHanlder;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        query = (new URLSearchParams(request.params)).toString();
-                        req = new Request(request.url + (query.length > 0 ? ('?' + query) : ''), request.config);
-                        return [4 /*yield*/, fetch(req, this.config)];
-                    case 1:
-                        resp = _a.sent();
-                        if (!(resp.status >= 200 && resp.status < 300)) return [3 /*break*/, 11];
-                        contentType = resp.headers.get('Content-Type');
-                        if (!(contentType != null)) return [3 /*break*/, 9];
-                        if (!(contentType.indexOf('text') > -1)) return [3 /*break*/, 3];
-                        return [4 /*yield*/, resp.text()];
-                    case 2: return [2 /*return*/, _a.sent()];
-                    case 3:
-                        if (!(contentType.indexOf('form') > -1)) return [3 /*break*/, 5];
-                        return [4 /*yield*/, resp.formData()];
-                    case 4: return [2 /*return*/, _a.sent()];
-                    case 5:
-                        if (!(contentType.indexOf('json') > -1)) return [3 /*break*/, 7];
-                        return [4 /*yield*/, resp.json()];
-                    case 6: return [2 /*return*/, _a.sent()];
-                    case 7: return [4 /*yield*/, resp.blob()];
-                    case 8: return [2 /*return*/, _a.sent()];
-                    case 9: return [4 /*yield*/, resp.text()];
-                    case 10: return [2 /*return*/, _a.sent()];
-                    case 11:
-                        if (resp.status === 301 || resp.status === 302) { // Redirect
-                            l = resp.headers.get('Location');
-                            window.location.assign(l == null ? '' : l);
+                        try {
+                            httpAPI = this.httpAPIs[api];
+                            console.log(httpAPI);
                         }
-                        error = new Error(resp.statusText);
-                        throw error;
-                }
-            });
-        });
-    };
-    HttpClientImpl.prototype.get = function (url, params, config) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.request({
-                            url: url,
-                            params: params,
-                            config: __assign(__assign({}, config), { method: 'GET' }),
-                        })];
-                    case 1: return [2 /*return*/, _a.sent()];
-                }
-            });
-        });
-    };
-    HttpClientImpl.prototype.post = function (url, params, config) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.request({
-                            url: url,
-                            params: params,
-                            config: __assign(__assign({}, config), { method: 'POST' }),
-                        })];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        catch (error) {
+                            return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
+                        }
+                        request = {
+                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.request.url),
+                            params: __assign(__assign(__assign({}, (typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams), (typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params), (typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params),
+                            config: __assign(__assign(__assign({}, (typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig), (typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config), (typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config)
+                        };
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 5, , 8]);
+                        // If mock is enabled and a mock handler is defined, skips HTTP request and response
+                        if (enableMock) {
+                            mockHandler = httpAPI['mock'];
+                            if (mockHandler != undefined) {
+                                return [2 /*return*/, mockHandler(request)];
+                            }
+                        }
+                        return [4 /*yield*/, httpRequest(request)];
+                    case 2:
+                        data = _a.sent();
+                        responseHanlder = httpAPI['response'];
+                        if (!responseHanlder) return [3 /*break*/, 4];
+                        return [4 /*yield*/, responseHanlder(data, request)];
+                    case 3:
+                        data = _a.sent();
+                        _a.label = 4;
+                    case 4: return [2 /*return*/, data];
+                    case 5:
+                        error_1 = _a.sent();
+                        errorHanlder = httpAPI['error'];
+                        if (!errorHanlder) return [3 /*break*/, 7];
+                        return [4 /*yield*/, errorHanlder(error_1, request)];
+                    case 6:
+                        _a.sent();
+                        _a.label = 7;
+                    case 7: return [2 /*return*/, Promise.reject(error_1)];
+                    case 8: return [2 /*return*/];
                 }
             });
         });
     };
     return HttpClientImpl;
 }());
-var httpClient = null;
-export function makeHttpClient() {
-    return new HttpClientImpl();
-}
-export function getHttpClient() {
-    if (httpClient === null) {
-        httpClient = new HttpClientImpl();
-    }
-    return httpClient;
-}

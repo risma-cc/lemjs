@@ -7,26 +7,22 @@ export interface ModelInit<T> {
      */
     state: T;
     /*!
-     * query: Involves functions of query actions.
+     * query: Defines functions of query actions.
      */
-    query: Record<symbol | string, (payload: {}, state: T) => any>;
+    query?: Record<symbol | string, (payload: {}, state: T) => any>;
     /*!
-     * update: Involves functions of update actions whose returning values will be set to the state.
+     * update: Defines functions of update actions whose returning values will be set to the state.
      */
-    update: Record<symbol | string, (payload: {}, state: T) => T>;
-    /*!
-     * put: Involves functions of asynchronous actions.
-     */
-    put: Record<symbol | string, (payload: {}, state: T) => Promise<void>>;
+    update?: Record<symbol | string, (payload: {}, state: T) => T>;
 }
 /*!
  * Model: The model for managing shared stateful data
  */
 export interface Model<T> {
     /*!
-     * state: The stateful values
+     * getState: Returns the values of state
      */
-    state: T;
+    getState: () => T;
     /*!
      * query: Dispatches a synchronous action to query the state.
      */
@@ -36,119 +32,95 @@ export interface Model<T> {
      */
     update: (action: string, payload: any) => T;
     /*!
-     * put: Dispatches an asynchronous action.
-     */
-    put: (action: string, payload: any) => Promise<void>;
-    /*!
      * subscribe: Subscribes the update event.
      */
-    subscribeUpdate: (callback: (state: T) => void) => void;
+    subscribe: (callback: (state: T) => void) => void;
     /*!
      * unsubscribe: Unsubscribes the update event.
      */
-    unsubscribeUpdate: (callback: (state: T) => void) => void;
-    /*!
-     * subscribe: Subscribes the loading event including on and off.
-     */
-    subscribeLoading: (callback: (on: boolean, action: string) => void) => void;
-    /*!
-     * unsubscribe: Unsubscribes the loading event.
-     */
-    unsubscribeLoading: (callback: (on: boolean, action: string) => void) => void;
+    unsubscribe: (callback: (state: T) => void) => void;
 }
-export { makeModel } from './core/model';
+export { makeModel, useModel } from './core/model';
 /*!
- * HttpParams: similar to URLSearchParams.
+ * HttpParams: Similar to URLSearchParams.
  */
 export declare type HttpParams = Record<string, string>;
 /*!
- * HttpConfig: configuration options of HTTP request.
+ * HttpConfig: Configuration options of HTTP request.
  */
-export interface HttpConfig extends RequestInit {
+export declare type HttpConfig = RequestInit;
+/*!
+ * FormElement: Element in form data
+ */
+export interface FormElement {
+    name: string;
+    value: string | Blob;
+    fileName?: string;
 }
+export { JsonBody, FormBody } from './core/http';
 /*!
  * HttpRequest: HTTP rquest with a required url property.
  */
 export interface HttpRequest {
     url: string;
-    params?: HttpParams;
-    config?: HttpConfig;
+    params?: HttpParams | (() => HttpParams);
+    config?: HttpConfig | (() => HttpConfig);
 }
 /*!
  * HttpRequestOptions: HTTP request with all optional properties.
  */
 export interface HttpRequestOptions {
     url?: string;
-    params?: HttpParams;
-    config?: HttpConfig;
+    params?: HttpParams | (() => HttpParams);
+    config?: HttpConfig | (() => HttpConfig);
 }
-/*!
- * HttpClient: An encapsulation of HTTP fetch.
- */
-export interface HttpClient {
-    /*!
-     * config: Configuration of HTTP client.
-     */
-    config: HttpConfig;
-    /*!
-     * setHeader: Set one of HTTP reqest header.
-     */
-    setHeader: (name: string, value: string) => void;
-    /*!
-     * deleteHeader: Delete one of HTTP request header.
-     */
-    deleteHeader: (name: string) => void;
-    /*!
-     * request: Fetches an HTTP request.
-     */
-    request: (request: HttpRequest) => Promise<any>;
-    /*!
-     * get: Fetches an HTTP GET request.
-     */
-    get: (path: string, params?: HttpParams, config?: HttpConfig) => Promise<any>;
-    /*!
-     * post: Fetches an HTTP POST request.
-     */
-    post: (path: string, params?: HttpParams, config?: HttpConfig) => Promise<any>;
-}
-export { makeHttpClient, getHttpClient } from './core/http';
+export { httpRequest, httpGet, httpPost } from './core/http';
 /*!
  * HttpAPI: Definition of HTTP API.
  */
 export interface HttpAPI {
     request: HttpRequest;
-    response: (response: any, service: HttpService) => any;
-    error?: (error: Error, service: HttpService) => any;
+    response?: (response: any, request: HttpRequest) => any;
+    error?: (error: Error, request: HttpRequest) => any;
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock value.
      */
     mock?: (request: HttpRequest) => any;
 }
+export { enableMock } from './core/http';
 /*!
- * HttpServiceInit: Definition of HTTP service for initialization.
+ * HttpClientInit: Definition of an HTTP APIs client for initialization.
  */
-export interface HttpServiceInit {
+export interface HttpClientInit {
     baseURL: string;
-    defaultParams?: HttpParams;
-    defaultConfig?: HttpConfig;
+    defaultParams?: HttpParams | (() => HttpParams);
+    defaultConfig?: HttpConfig | (() => HttpConfig);
     httpAPIs: Record<string, HttpAPI>;
-    httpClient?: HttpClient;
 }
 /*!
- * HttpService: The HTTP service for providing encapsulated APIs.
+ * HttpClient: The client for providing encapsulated HTTP APIs.
  */
-export interface HttpService {
+export interface HttpClient {
     baseURL: string;
-    defaultParams: HttpParams;
-    defaultConfig: HttpConfig;
+    defaultParams: HttpParams | (() => HttpParams);
+    defaultConfig: HttpConfig | (() => HttpConfig);
     httpAPIs: Record<string, HttpAPI>;
-    httpClient: HttpClient;
     /*!
      * fetch: Asynchronous handler of the API request and response.
-     * URL: The service's base URL + fetch options' url (path actually) / API's
-     * Params: Combination of options' params, API's and service's default
-     * Config: Combination of options' config, API's, services' default and HttpClient's
+     * URL: Join the base URL and a sub-path (fetch options‘ url preferred to HttpAPI's)
+     * Params: Combination of options' params, API's and client's default
+     * Config: Combination of options' config, API's and client's default
      */
     fetch: (api: string, options?: HttpRequestOptions) => Promise<any>;
 }
-export { makeHttpService, enableMock } from './core/service';
+export { makeHttpClient } from './core/http';
+export interface LoadingController {
+    /*!
+     * subscribe: Subscribes the loading event including on and off.
+     */
+    subscribe: (callback: (on: boolean) => void) => void;
+    /*!
+     * unsubscribe: Unsubscribes the loading event.
+     */
+    unsubscribe: (callback: (on: boolean) => void) => void;
+}
