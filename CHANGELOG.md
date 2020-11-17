@@ -1,11 +1,19 @@
 # CHANGELOG
+
+## V0.2.1
+### Refactored
+- HTTP: Check the enviroment NODE_ENV and MOCK_DISABLED
+
+### Removed
+- HTTP: enableMock
+
 ## V0.2.0 ｜ 2020-11-16
 ### Features
 - HTTP: API's mock, enableMock
 - AsyncFileReader
 
-### Fixed
-- HTTP: The parameters client in response and error of API were replaced with request.
+### Changed
+- HTTP: The parameter request in response and error of API.
 
 ### Removed
 - Model: put, loading
