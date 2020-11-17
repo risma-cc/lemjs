@@ -136,15 +136,3 @@ export interface HttpClient {
 }
 
 export { makeHttpClient } from './core/http';
-
-export interface LoadingController {
-    /*!
-     * subscribe: Subscribes the loading event including on and off.
-     */
-    subscribe: (callback: (on: boolean) => void) => void;
-
-    /*!
-     * unsubscribe: Unsubscribes the loading event.
-     */
-    unsubscribe: (callback: (on: boolean) => void) => void;
-}

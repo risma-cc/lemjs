@@ -213,5 +213,4 @@ SessionStorage提供的方法与LocalStorage一致。
     let txt = await AsyncFileReader.readAsText(file);
 
 ## LICENSE
-
 MIT License
