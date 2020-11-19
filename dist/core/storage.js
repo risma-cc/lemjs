@@ -20,6 +20,14 @@ export var LocalStorage;
     }
     LocalStorage.set = set;
     ;
+    /*!
+     * remove: Remove a pair of key/value from local storage.
+     */
+    function remove(key) {
+        localStorage.removeItem(key);
+    }
+    LocalStorage.remove = remove;
+    ;
 })(LocalStorage || (LocalStorage = {}));
 export var SessionStorage;
 (function (SessionStorage) {
@@ -42,5 +50,13 @@ export var SessionStorage;
         sessionStorage.setItem(key, JSON.stringify(value));
     }
     SessionStorage.set = set;
+    ;
+    /*!
+     * remove: Remove a pair of key/value from session storage.
+     */
+    function remove(key) {
+        sessionStorage.removeItem(key);
+    }
+    SessionStorage.remove = remove;
     ;
 })(SessionStorage || (SessionStorage = {}));

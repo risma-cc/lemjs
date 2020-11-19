@@ -198,10 +198,12 @@ https://github.com/risma-cc/lemjs
 ### LocalStorage
 
     LocalStorage.set('myName', 'Michael');
-    let myName = LocalStorage.getString('myName');
+    let myName = LocalStorage.get('myName');
+    LocalStorage.remove('myName');
 
     LocalStorage.set('myPhone', { os: 'Android', version: '10.1' } );
-    let myPhone = LocalStorage.getObject('myPhone');
+    let myPhone = LocalStorage.get('myPhone');
+    LocalStorage.remove('myPhone');
 
 ### SessionStorage
 SessionStorage提供的方法与LocalStorage一致。

@@ -115,5 +115,5 @@ export interface HttpClient {
     fetch: (api: string, options?: HttpRequestOptions) => Promise<any>;
 }
 export { makeHttpClient } from './core/http';
-export { LocalStorage, SessionStorage } from './core/storage';
 export { AsyncFileReader } from './core/file';
+export { LocalStorage, SessionStorage } from './core/storage';

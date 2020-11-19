@@ -16,6 +16,13 @@ export namespace LocalStorage {
     export function set(key: string, value: any) {
         localStorage.setItem(key, JSON.stringify(value));
     };
+
+    /*!
+     * remove: Remove a pair of key/value from local storage.
+     */
+    export function remove(key: string) {
+        localStorage.removeItem(key);
+    };
 }
 
 export namespace SessionStorage {
@@ -35,5 +42,12 @@ export namespace SessionStorage {
      */
     export function set(key: string, value: string | object) {
         sessionStorage.setItem(key, JSON.stringify(value));
+    };
+
+    /*!
+     * remove: Remove a pair of key/value from session storage.
+     */
+    export function remove(key: string) {
+        sessionStorage.removeItem(key);
     };
 }

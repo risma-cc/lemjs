@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## V0.2.1
+### Features
+- Storage: *remove*
+
 ### Changed
 - Storage: *get* replaces *getString* and *getObject*
 
@@ -26,4 +29,4 @@
 ### Features
 - Model: state, query, update, put (asynchronous actions), loading
 - HTTP: API, client
-- LocalStorage & SessionStorage
+- Storage: local storage and session storage
