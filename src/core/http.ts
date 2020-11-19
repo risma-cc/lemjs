@@ -73,7 +73,7 @@ export async function httpGet(url: string, params?: HttpParams, config?: HttpCon
     return await httpRequest({
         url: url,
         params: params,
-        config: { ...config, ...{ method: 'GET' } },
+        config: { ...config, method: 'GET' },
     });
 }
 
@@ -84,7 +84,7 @@ export async function httpPost(url: string, params?: HttpParams, config?: HttpCo
     return await httpRequest({
         url: url,
         params: params,
-        config: { ...config, ...{ method: 'POST' } },
+        config: { ...config, method: 'POST' },
     });
 }
 
@@ -120,14 +120,14 @@ class HttpClientImpl implements HttpClient {
         let request = {
             url: this.baseURL + (options?.url ? options.url : httpAPI.request.url),
             params: {
-                ...(typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
-                ...(typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params,
-                ...(typeof options?.params == 'function') ? options?.params() : options?.params,
+                ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
+                ...((typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params),
+                ...((typeof options?.params == 'function') ? options?.params() : options?.params),
             },
             config: {
-                ...(typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
-                ...(typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config,
-                ...(typeof options?.config == 'function') ? options?.config() : options?.config,
+                ...((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig),
+                ...((typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config),
+                ...((typeof options?.config == 'function') ? options?.config() : options?.config),
             }
         };
 
