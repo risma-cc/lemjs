@@ -1,5 +1,5 @@
 # LemJS
-Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数据流共享方案，加入风格一致的Web API与Service封装，以及对React Hooks支持与扩展，可以作为一个前端应用框架的基础。
+Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数据流共享方案，加入编码风格一致的WebAPI封装，以及对React Hooks支持与扩展，可以作为一个前端应用框架的基础。
 
 Lem采用Typescript开发，同时支持在Javascript和Typescritp中使用。核心逻辑代码只使用原生标准库，原则上对各个前端主流框架的支持与整合都是将来可以考虑的。目前，先只加入了对React Hooks的支持。
 
@@ -137,7 +137,10 @@ https://github.com/risma-cc/lemjs
             /* 错误处理，包括网络失败、HTTP非200状态等。 */
             error: (error: Error, request: HttpRequest) => {
             },
-            /* 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。 */
+            /*
+             * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
+             * 当环境变量NODE_ENV为"production"或者MOCK_DISABLED为"true"时，mock将被忽略。
+             */
             mock: (request: HttpRequest) => {
                 return { answer: 'Hello Jack' };
             }
@@ -195,10 +198,12 @@ https://github.com/risma-cc/lemjs
 ### LocalStorage
 
     LocalStorage.set('myName', 'Michael');
-    let myName = LocalStorage.getString('myName');
+    let myName = LocalStorage.get('myName');
+    LocalStorage.remove('myName');
 
     LocalStorage.set('myPhone', { os: 'Android', version: '10.1' } );
-    let myPhone = LocalStorage.getObject('myPhone');
+    let myPhone = LocalStorage.get('myPhone');
+    LocalStorage.remove('myPhone');
 
 ### SessionStorage
 SessionStorage提供的方法与LocalStorage一致。
@@ -210,5 +215,4 @@ SessionStorage提供的方法与LocalStorage一致。
     let txt = await AsyncFileReader.readAsText(file);
 
 ## LICENSE
-
 MIT License

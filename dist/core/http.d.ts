@@ -19,5 +19,4 @@ export declare function httpGet(url: string, params?: HttpParams, config?: HttpC
  * httpPost: Send an HTTP POST request and return a response
  */
 export declare function httpPost(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
-export declare let enableMock: boolean;
 export declare function makeHttpClient(init: HttpClientInit): HttpClient;

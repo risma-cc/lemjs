@@ -146,10 +146,6 @@ export function httpPost(url, params, config) {
     });
 }
 /*！
- * enableMock: Enable or disable mock handlers globaly.
- */
-export var enableMock = true;
-/*！
  * makeHttpClient: Create an HTTP client.
  */
 export function makeHttpClient(init) {
@@ -177,14 +173,15 @@ var HttpClientImpl = /** @class */ (function () {
                         }
                         request = {
                             url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.request.url),
-                            params: __assign(__assign(__assign({}, (typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams), (typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params), (typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params),
-                            config: __assign(__assign(__assign({}, (typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig), (typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config), (typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config)
+                            params: __assign(__assign(__assign({}, ((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams)), ((typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params)), ((typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params)),
+                            config: __assign(__assign(__assign({}, ((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig)), ((typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config)), ((typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config))
                         };
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 5, , 8]);
-                        // If mock is enabled and a mock handler is defined, skips HTTP request and response
-                        if (enableMock) {
+                        // In case of non-production env and mock enabled,
+                        // if a mock handler is defined, skips HTTP request and response
+                        if (process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true') {
                             mockHandler = httpAPI['mock'];
                             if (mockHandler != undefined) {
                                 return [2 /*return*/, mockHandler(request)];
