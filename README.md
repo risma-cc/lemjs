@@ -103,7 +103,7 @@ https://github.com/risma-cc/lemjs
              * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再API、最后Service。
              */
             request: {
-                /* 请求URL路径，如果Service指定了baseURL，这里只需要指定子路由路径。 */
+                /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
                 url: '/hello/{you}',
                 /*
                  * 请求URL参数。
