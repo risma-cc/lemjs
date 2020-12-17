@@ -104,10 +104,14 @@ https://github.com/risma-cc/lemjs
              */
             request: {
                 /* 请求URL路径，如果Service指定了baseURL，这里只需要指定子路由路径。 */
-                url: '/hello',
-                /* 请求URL参数 */
+                url: '/hello/{you}',
+                /*
+                 * 请求URL参数。
+                 * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
+                 */
                 params: {
-                   'color': ‘red’
+                    'you': 'Jack',
+                    'color': 'red'
                 },
                 /* 请求配置选项，参考fetch的RequestInit。 */
                 config: {

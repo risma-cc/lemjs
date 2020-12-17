@@ -71,14 +71,30 @@ export function FormBody(elements) {
  */
 export function httpRequest(request) {
     return __awaiter(this, void 0, void 0, function () {
-        var url, params, resp, contentType, l;
+        var url, params, pathParams, _i, pathParams_1, p, n, v, queryParams, resp, contentType, l;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     url = request.url;
-                    params = (typeof request.params == 'function') ? request.params() : request.params;
-                    if (params) {
-                        url += '?' + (new URLSearchParams(params)).toString();
+                    params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
+                    pathParams = url.match(/{(\S+)}/g);
+                    if (pathParams) {
+                        for (_i = 0, pathParams_1 = pathParams; _i < pathParams_1.length; _i++) {
+                            p = pathParams_1[_i];
+                            n = p.slice(1, -1);
+                            console.log(n);
+                            v = params.get(n);
+                            console.log(v);
+                            if (v) {
+                                url = url.replace(p, v);
+                                params.delete(n);
+                            }
+                        }
+                        console.log(url);
+                    }
+                    queryParams = params.toString();
+                    if (queryParams.length > 0) {
+                        url += '?' + params.toString();
                     }
                     return [4 /*yield*/, fetch(url, (typeof request.config == 'function') ? request.config() : request.config)];
                 case 1:
@@ -166,7 +182,6 @@ var HttpClientImpl = /** @class */ (function () {
                     case 0:
                         try {
                             httpAPI = this.httpAPIs[api];
-                            console.log(httpAPI);
                         }
                         catch (error) {
                             return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];

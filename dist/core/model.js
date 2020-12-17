@@ -22,8 +22,8 @@ export function makeModel(init) {
  */
 export function useModel(model) {
     var _a = React.useState(model.state), state = _a[0], setState = _a[1];
-    var onUpdated = function (state) {
-        setState(state);
+    var onUpdated = function (s) {
+        setState(s);
     };
     React.useEffect(function () {
         model.subscribe(onUpdated);

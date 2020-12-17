@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## V0.2.2
+### Features
+- HTTP: API supports path parameters in URL, e.g. /user/{id}
+
+### Fixed
+- Model: code small
+
 ## V0.2.1
 ### Features
 - Storage: *remove*

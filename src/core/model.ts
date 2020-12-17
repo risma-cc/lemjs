@@ -14,8 +14,8 @@ export function makeModel<T>(init: ModelInit<T>): Model<T> {
  */
 export function useModel<T>(model: Model<T>): T {
     const [state, setState] = React.useState((model as ModelImpl<T>).state);
-    const onUpdated = (state: T) => {
-        setState(state);
+    const onUpdated = (s: T) => {
+        setState(s);
     }
 
     React.useEffect(() => {

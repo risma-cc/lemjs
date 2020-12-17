@@ -36,9 +36,23 @@ export function FormBody(elements: FormElement[]): FormData {
  */
 export async function httpRequest(request: HttpRequest) {
     let url = request.url;
-    let params = (typeof request.params == 'function') ? request.params() : request.params;
-    if (params) {
-        url += '?' + (new URLSearchParams(params)).toString();
+    let params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
+    // Process URL path parameters
+    let pathParams = url.match(/{(\S+)}/g);
+    if (pathParams) {
+        for (let p of pathParams) {
+            let n = p.slice(1, -1)
+            let v = params.get(n);
+            if (v) {
+                url = url.replace(p, v);
+                params.delete(n);
+            }
+        }
+    }
+    // Process URL query parameters
+    let queryParams = params.toString();
+    if (queryParams.length > 0) {
+        url += '?' + queryParams;
     }
     let resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
 
@@ -111,7 +125,7 @@ class HttpClientImpl implements HttpClient {
     async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
         var httpAPI;
         try {
-            httpAPI = this.httpAPIs[api];console.log(httpAPI)
+            httpAPI = this.httpAPIs[api];
         } catch(error) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
