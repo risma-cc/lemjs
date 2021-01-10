@@ -91,23 +91,27 @@ export interface HttpAPI extends HttpRequest {
  * HttpClientInit: Definition of an HTTP APIs client for initialization.
  */
 export interface HttpClientInit {
-    baseURL: string;
+    httpAPIs: Record<string, HttpAPI>;
+    baseURL?: string;
     defaultParams?: HttpParams | (() => HttpParams);
     defaultConfig?: HttpConfig | (() => HttpConfig);
-    httpAPIs: Record<string, HttpAPI>;
+    defaultResponse?: (response: any, request: HttpRequest) => any;
+    defaultError?: (error: Error, request: HttpRequest) => any;
 }
 /*!
  * HttpClient: The client for providing encapsulated HTTP APIs.
  */
 export interface HttpClient {
-    baseURL: string;
     httpAPIs: Record<string, HttpAPI>;
+    baseURL: string;
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
+    defaultResponse?: (response: any, request: HttpRequest) => any;
+    defaultError?: (error: Error, request: HttpRequest) => any;
     /*!
      * fetch: Asynchronous handler of the API request and response.
      * Request:
-     *   URL: Join the base URL and a sub-path (fetch options‘ url preferred to HttpAPI's)
+     *   URL: Join the base URL and a sub-path (fetch options‘ url has priority over HttpAPI's)
      *   Params: Combination of options' params, API's and client's default
      *   Config: Combination of options' config, API's and client's default
      */

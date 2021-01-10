@@ -147,16 +147,25 @@ https://github.com/risma-cc/lemjs
 ### 创建HTTP服务Client
 
     const myClient = makeHttpClient({
-        /* 统一的URL前缀 */
-        baseURL: 'http://a.b.c/api',
         /* 接口定义 */
         httpAPIs: myAPIs,
-        /* 默认URL参数，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
+        /* 统一的URL前缀 */
+        baseURL: 'http://a.b.c/api',
+        /* 默认URL参数。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultParams: () => {
             return { 'ver': myVersion };
         },
-        /* 默认配置选项，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
+        /* 默认配置选项。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultConfig: { },
+        /* 默认响应处理。如果定义了，则先于HttpAPI中response被调用。 */
+        defaultResponse: (response: any, request: HttpRequest) => {
+            /* 响应结果处理，可以修改返回的响应数据。 */
+            return response;
+        },
+        /* 默认错误处理。如果定义了，则先于HttpAPI中error被调用。 */
+        defaultError: (error: any, request: HttpRequest) => {
+            /* 错误处理 */
+        },
     });
 
 ### 使用HTTP服务接口

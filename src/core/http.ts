@@ -110,16 +110,20 @@ export function makeHttpClient(init: HttpClientInit): HttpClient {
 }
 
 class HttpClientImpl implements HttpClient {
-    baseURL: string;
     httpAPIs: Record<string, HttpAPI>;
+    baseURL: string;
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
+    defaultResponse?: (response: any, request: HttpRequest) => any;
+    defaultError?: (error: Error, request: HttpRequest) => any;
 
     constructor(init: HttpClientInit) {
-        this.baseURL = init.baseURL;
+        this.httpAPIs = init.httpAPIs;
+        this.baseURL = init.baseURL ? init.baseURL : "";
         this.defaultParams = init.defaultParams ? init.defaultParams : {};
         this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
-        this.httpAPIs = init.httpAPIs;
+        this.defaultResponse = init.defaultResponse;
+        this.defaultError = init.defaultError;
     }
 
     async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
@@ -150,25 +154,35 @@ class HttpClientImpl implements HttpClient {
 
         try {
             // In case of non-production env and mock enabled,
-            // if a mock handler is defined, skips HTTP request and response
+            // if a mock handler is defined, skips HTTP request.
             if (process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true') {
                 const mockHandler = httpAPI['mock'];
                 if (mockHandler != undefined) {
-                    return mockHandler(request);
+                    return await this.responseProc(httpAPI, request, mockHandler(request));
                 }
             }
             let data = await httpRequest(request);
-            let responseHanlder = httpAPI['response'];
-            if (responseHanlder) {
-                data = await responseHanlder(data, request);
-            }
-            return data;
+            return await this.responseProc(httpAPI, request, data);
         } catch (error) {
+            if (this.defaultError) {
+                await this.defaultError(error, request);
+            }
             let errorHanlder = httpAPI['error'];
             if (errorHanlder) {
                 await errorHanlder(error, request);
             }
             return Promise.reject(error);
         }
+    }
+
+    private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
+        if (this.defaultResponse) {
+            data = await this.defaultResponse(data, request);
+        }
+        let responseHanlder = api['response'];
+        if (responseHanlder) {
+            data = await responseHanlder(data, request);
+        }
+        return data;
     }
 }

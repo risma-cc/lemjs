@@ -3,9 +3,11 @@
 ## V0.3.0
 ### Features
 - HTTP: API supports path parameters in URL, e.g. /user/{id}
+- HTTP: HTTP client's default response and error handlers
 
 ### Changed
 - HTTP: HttpAPI extends HttpRequest
+- HTTP: mock skips only request and not response/error
 
 ### Fixed
 - Model: code small
