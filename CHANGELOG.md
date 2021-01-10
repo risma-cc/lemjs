@@ -1,8 +1,11 @@
 # CHANGELOG
 
-## V0.2.2
+## V0.3.0
 ### Features
 - HTTP: API supports path parameters in URL, e.g. /user/{id}
+
+### Changed
+- HTTP: HttpAPI extends HttpRequest
 
 ### Fixed
 - Model: code small

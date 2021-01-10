@@ -94,8 +94,7 @@ export { httpRequest, httpGet, httpPost } from './core/http';
 /*!
  * HttpAPI: Definition of HTTP API.
  */
-export interface HttpAPI {
-    request: HttpRequest,
+export interface HttpAPI extends HttpRequest {
     response?: (response: any, request: HttpRequest) => any,
     error?: (error: Error, request: HttpRequest) => any,
 
@@ -121,9 +120,9 @@ export interface HttpClientInit {
  */
 export interface HttpClient {
     baseURL: string,
+    httpAPIs: Record<string, HttpAPI>,
     defaultParams: HttpParams | (() => HttpParams),
     defaultConfig: HttpConfig | (() => HttpConfig),
-    httpAPIs: Record<string, HttpAPI>,
 
     /*!
      * fetch: Asynchronous handler of the API request and response.

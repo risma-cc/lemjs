@@ -97,38 +97,31 @@ https://github.com/risma-cc/lemjs
 
     const myAPIs = {
         'hello': {
+            /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
+            url: '/hello/{you}',
             /*
-             * 接口请求，包括URL路径、URL参数、配置选项。
-             * 备注：在Service、API以及fetch都可以指定接口请求的各个属性，他们会自动合并。
-             * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再API、最后Service。
-             */
-            request: {
-                /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
-                url: '/hello/{you}',
+                * 请求URL参数。
+                * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
+                */
+            params: {
+                'you': 'Jack',
+                'color': 'red'
+            },
+            /* 请求配置选项，参考fetch的RequestInit。 */
+            config: {
+                /* HTTP请求方法，缺省为“GET”。 */
+                method: ‘POST’,
                 /*
-                 * 请求URL参数。
-                 * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
-                 */
-                params: {
-                    'you': 'Jack',
-                    'color': 'red'
-                },
-                /* 请求配置选项，参考fetch的RequestInit。 */
-                config: {
-                    /* HTTP请求方法，缺省为“GET”。 */
-                    method: ‘POST’,
-                    /*
-                     * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
-                     * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
-                     */
-                    body: FormBody([
-                        {
-                            name: 'avatar',
-                            value: /* 文件Blob/File */,
-                            fileName: 'myavatar.jpg'
-                        }
-                    ])
-                }
+                    * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
+                    * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
+                    */
+                body: FormBody([
+                    {
+                        name: 'avatar',
+                        value: /* 文件Blob/File */,
+                        fileName: 'myavatar.jpg'
+                    }
+                ])
             },
             /* 响应处理，data根据Content-Type已转换成string、FormData、JSON对象或者blob。 */
             response: (data: any, request: HttpRequest) => {
@@ -156,17 +149,22 @@ https://github.com/risma-cc/lemjs
     const myClient = makeHttpClient({
         /* 统一的URL前缀 */
         baseURL: 'http://a.b.c/api',
+        /* 接口定义 */
+        httpAPIs: myAPIs,
         /* 默认URL参数，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultParams: () => {
             return { 'ver': myVersion };
         },
         /* 默认配置选项，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultConfig: { },
-        httpAPIs: myAPIs,
     });
 
 ### 使用HTTP服务接口
 
+    /*
+     * 接口的URL路径、URL参数、配置选项在HttpAPI以及fetch都可以指定，还有HttpClient中的默认值，他们会自动合并。
+     * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再HttpAPI、最后HttpClient默认值。
+     */
     let result = await myClient.fetch('hello', { params: { 'myname': 'Michael' }});
 
 ### 自定义Service

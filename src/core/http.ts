@@ -103,7 +103,7 @@ export async function httpPost(url: string, params?: HttpParams, config?: HttpCo
 }
 
 /*！
- * makeHttpClient: Create an HTTP client.
+ * makeHttpClient: Create an HTTP client.s
  */
 export function makeHttpClient(init: HttpClientInit): HttpClient {
     return new HttpClientImpl(init);
@@ -111,9 +111,9 @@ export function makeHttpClient(init: HttpClientInit): HttpClient {
 
 class HttpClientImpl implements HttpClient {
     baseURL: string;
+    httpAPIs: Record<string, HttpAPI>;
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
-    httpAPIs: Record<string, HttpAPI>;
 
     constructor(init: HttpClientInit) {
         this.baseURL = init.baseURL;
@@ -126,21 +126,24 @@ class HttpClientImpl implements HttpClient {
         var httpAPI;
         try {
             httpAPI = this.httpAPIs[api];
+            if (!httpAPI) {
+                return Promise.reject('The API \"' + api + '\" does NOT exist');
+            }
         } catch(error) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
 
         // Make a request object
         let request = {
-            url: this.baseURL + (options?.url ? options.url : httpAPI.request.url),
+            url: this.baseURL + (options?.url ? options.url : httpAPI.url),
             params: {
                 ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
-                ...((typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params),
+                ...((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params),
                 ...((typeof options?.params == 'function') ? options?.params() : options?.params),
             },
             config: {
                 ...((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig),
-                ...((typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config),
+                ...((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config),
                 ...((typeof options?.config == 'function') ? options?.config() : options?.config),
             }
         };

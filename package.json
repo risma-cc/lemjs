@@ -1,6 +1,6 @@
 {
   "name": "lemjs",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "LemJS - A lightweight frontend application framework",
   "main": "dist/index.js",
   "scripts": {

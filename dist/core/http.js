@@ -82,19 +82,16 @@ export function httpRequest(request) {
                         for (_i = 0, pathParams_1 = pathParams; _i < pathParams_1.length; _i++) {
                             p = pathParams_1[_i];
                             n = p.slice(1, -1);
-                            console.log(n);
                             v = params.get(n);
-                            console.log(v);
                             if (v) {
                                 url = url.replace(p, v);
                                 params.delete(n);
                             }
                         }
-                        console.log(url);
                     }
                     queryParams = params.toString();
                     if (queryParams.length > 0) {
-                        url += '?' + params.toString();
+                        url += '?' + queryParams;
                     }
                     return [4 /*yield*/, fetch(url, (typeof request.config == 'function') ? request.config() : request.config)];
                 case 1:
@@ -162,7 +159,7 @@ export function httpPost(url, params, config) {
     });
 }
 /*！
- * makeHttpClient: Create an HTTP client.
+ * makeHttpClient: Create an HTTP client.s
  */
 export function makeHttpClient(init) {
     return new HttpClientImpl(init);
@@ -182,14 +179,17 @@ var HttpClientImpl = /** @class */ (function () {
                     case 0:
                         try {
                             httpAPI = this.httpAPIs[api];
+                            if (!httpAPI) {
+                                return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
+                            }
                         }
                         catch (error) {
                             return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
                         }
                         request = {
-                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.request.url),
-                            params: __assign(__assign(__assign({}, ((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams)), ((typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params)), ((typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params)),
-                            config: __assign(__assign(__assign({}, ((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig)), ((typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config)), ((typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config))
+                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.url),
+                            params: __assign(__assign(__assign({}, ((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams)), ((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params)), ((typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params)),
+                            config: __assign(__assign(__assign({}, ((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig)), ((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config)), ((typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config))
                         };
                         _a.label = 1;
                     case 1:
