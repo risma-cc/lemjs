@@ -157,12 +157,12 @@ https://github.com/risma-cc/lemjs
         },
         /* 默认配置选项。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultConfig: { },
-        /* 默认响应处理。如果定义了，则先于HttpAPI中response被调用。 */
+        /* 默认响应处理。如果HttpAPI中定义了response，则不调用默认响应处理方法。 */
         defaultResponse: (response: any, request: HttpRequest) => {
             /* 响应结果处理，可以修改返回的响应数据。 */
             return response;
         },
-        /* 默认错误处理。如果定义了，则先于HttpAPI中error被调用。 */
+        /* 默认错误处理。如果HttpAPI中定义了error，则不调用默认错误处理方法。 */
         defaultError: (error: any, request: HttpRequest) => {
             /* 错误处理 */
         },

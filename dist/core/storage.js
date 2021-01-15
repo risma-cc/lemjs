@@ -5,10 +5,7 @@ export var LocalStorage;
      */
     function get(key) {
         var data = localStorage.getItem(key);
-        if (data === null) {
-            return null;
-        }
-        return JSON.parse(data);
+        return data ? JSON.parse(data) : data;
     }
     LocalStorage.get = get;
     ;

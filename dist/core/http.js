@@ -208,15 +208,15 @@ var HttpClientImpl = /** @class */ (function () {
                     case 5: return [2 /*return*/, _a.sent()];
                     case 6:
                         error_1 = _a.sent();
-                        if (!this.defaultError) return [3 /*break*/, 8];
-                        return [4 /*yield*/, this.defaultError(error_1, request)];
+                        errorHanlder = httpAPI['error'];
+                        if (!errorHanlder) return [3 /*break*/, 8];
+                        return [4 /*yield*/, errorHanlder(error_1, request)];
                     case 7:
                         _a.sent();
-                        _a.label = 8;
+                        return [3 /*break*/, 10];
                     case 8:
-                        errorHanlder = httpAPI['error'];
-                        if (!errorHanlder) return [3 /*break*/, 10];
-                        return [4 /*yield*/, errorHanlder(error_1, request)];
+                        if (!this.defaultError) return [3 /*break*/, 10];
+                        return [4 /*yield*/, this.defaultError(error_1, request)];
                     case 9:
                         _a.sent();
                         _a.label = 10;
@@ -232,15 +232,15 @@ var HttpClientImpl = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!this.defaultResponse) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.defaultResponse(data, request)];
+                        responseHanlder = api['response'];
+                        if (!responseHanlder) return [3 /*break*/, 2];
+                        return [4 /*yield*/, responseHanlder(data, request)];
                     case 1:
                         data = _a.sent();
-                        _a.label = 2;
+                        return [3 /*break*/, 4];
                     case 2:
-                        responseHanlder = api['response'];
-                        if (!responseHanlder) return [3 /*break*/, 4];
-                        return [4 /*yield*/, responseHanlder(data, request)];
+                        if (!this.defaultResponse) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.defaultResponse(data, request)];
                     case 3:
                         data = _a.sent();
                         _a.label = 4;

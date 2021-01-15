@@ -164,24 +164,22 @@ class HttpClientImpl implements HttpClient {
             let data = await httpRequest(request);
             return await this.responseProc(httpAPI, request, data);
         } catch (error) {
-            if (this.defaultError) {
-                await this.defaultError(error, request);
-            }
             let errorHanlder = httpAPI['error'];
             if (errorHanlder) {
                 await errorHanlder(error, request);
+            } else if (this.defaultError) {
+                await this.defaultError(error, request);
             }
             return Promise.reject(error);
         }
     }
 
     private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
-        if (this.defaultResponse) {
-            data = await this.defaultResponse(data, request);
-        }
         let responseHanlder = api['response'];
         if (responseHanlder) {
             data = await responseHanlder(data, request);
+        } else if (this.defaultResponse) {
+            data = await this.defaultResponse(data, request);
         }
         return data;
     }

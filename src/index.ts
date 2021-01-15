@@ -95,11 +95,18 @@ export { httpRequest, httpGet, httpPost } from './core/http';
  * HttpAPI: Definition of HTTP API.
  */
 export interface HttpAPI extends HttpRequest {
+    /*!
+     * response: Process response data and return them.
+     */
     response?: (response: any, request: HttpRequest) => any,
+
+    /*!
+     * error: Handles error.
+     */
     error?: (error: Error, request: HttpRequest) => any,
 
     /*!
-     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock value.
+     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
      * When the environment variable NODE_ENV is "production" or MOCK_DISABLED is "true", it'll be ignored.
      */
     mock?: (request: HttpRequest) => any,
