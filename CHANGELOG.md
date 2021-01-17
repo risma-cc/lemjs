@@ -4,13 +4,17 @@
 ### Features
 - HTTP: API supports path parameters in URL, e.g. /user/{id}
 - HTTP: HTTP client's default response and error handlers
+- HTTP: Mock is disabled when the enviroment MOCK is "none"
 
 ### Changed
 - HTTP: HttpAPI extends HttpRequest
-- HTTP: mock skips only request and not response/error
+- HTTP: Mock skips only request and not response/error
 
 ### Fixed
 - Model: code small
+
+### Removed
+- HTTP: The enviroment MOCK_DISABLED
 
 ## V0.2.1
 ### Features

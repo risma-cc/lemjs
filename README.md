@@ -136,7 +136,7 @@ https://github.com/risma-cc/lemjs
             },
             /*
              * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
-             * 当环境变量NODE_ENV为"production"或者MOCK_DISABLED为"true"时，mock将被忽略。
+             * 当环境变量NODE_ENV为"production"或者MOCK为"none"时，mock将被忽略。
              */
             mock: (request: HttpRequest) => {
                 return { answer: 'Hello Jack' };

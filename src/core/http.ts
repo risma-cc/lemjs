@@ -155,7 +155,7 @@ class HttpClientImpl implements HttpClient {
         try {
             // In case of non-production env and mock enabled,
             // if a mock handler is defined, skips HTTP request.
-            if (process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true') {
+            if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
                 const mockHandler = httpAPI['mock'];
                 if (mockHandler != undefined) {
                     return await this.responseProc(httpAPI, request, mockHandler(request));

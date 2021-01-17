@@ -89,7 +89,7 @@ export interface HttpAPI extends HttpRequest {
     error?: (error: Error, request: HttpRequest) => any;
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
-     * When the environment variable NODE_ENV is "production" or MOCK_DISABLED is "true", it'll be ignored.
+     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
      */
     mock?: (request: HttpRequest) => any;
 }

@@ -196,7 +196,7 @@ var HttpClientImpl = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 6, , 11]);
-                        if (!(process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true')) return [3 /*break*/, 3];
+                        if (!(process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none')) return [3 /*break*/, 3];
                         mockHandler = httpAPI['mock'];
                         if (!(mockHandler != undefined)) return [3 /*break*/, 3];
                         return [4 /*yield*/, this.responseProc(httpAPI, request, mockHandler(request))];
