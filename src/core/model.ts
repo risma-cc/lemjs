@@ -13,7 +13,7 @@ export function makeModel<T>(init: ModelInit<T>): Model<T> {
  *           connection between the update event and React Hooks dispatch.
  */
 export function useModel<T>(model: Model<T>): T {
-    const [state, setState] = React.useState((model as ModelImpl<T>).state);
+    const [ state, setState ] = React.useState((model as ModelImpl<T>).state);
     const onUpdated = (s: T) => {
         setState(s);
     }
@@ -23,7 +23,7 @@ export function useModel<T>(model: Model<T>): T {
         return () => {
             model.unsubscribe(onUpdated);
         }
-    }, [state]);
+    }, [ state ]);
 
     return state;
 }
