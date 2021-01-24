@@ -10,12 +10,12 @@ export interface ModelInit<T> {
     /*!
      * query: Defines functions of query actions.
      */
-    query?: Record<symbol | string, (payload: {}, state: T) => any>;
+    query?: Record<symbol | string, (payload: any, state: T) => any>;
 
     /*!
      * update: Defines functions of update actions whose returning values will be set to the state.
      */
-    update?: Record<symbol | string, (payload: {}, state: T) => T>;
+    update?: Record<symbol | string, (payload: any, state: T) => T>;
 }
 
 /*!
@@ -25,17 +25,17 @@ export interface Model<T> {
     /*!
      * getState: Returns the values of state
      */
-    getState: () => T;
+    get: () => T;
 
     /*!
      * query: Dispatches a synchronous action to query the state.
      */
-    query: (action: string, payload: any) => any;
+    query: (action: string, payload?: any) => any;
 
     /*!
      * update: Dispatches a synchronous action to update the state.
      */
-    update: (action: string, payload: any) => T;
+    update: (action: string, payload?: any) => void;
 
     /*!
      * subscribe: Subscribes the update event.

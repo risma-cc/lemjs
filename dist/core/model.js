@@ -1,14 +1,3 @@
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 import React from 'react';
 /*!
  * makeModel: Create a model.
@@ -40,8 +29,8 @@ var ModelImpl = /** @class */ (function () {
         this._update = init.update;
         this._eventUpdated = new Set();
     }
-    ModelImpl.prototype.getState = function () {
-        return __assign({}, this.state);
+    ModelImpl.prototype.get = function () {
+        return this.state;
     };
     ModelImpl.prototype.query = function (action, payload) {
         try {
@@ -61,7 +50,6 @@ var ModelImpl = /** @class */ (function () {
         }
         catch (error) {
         }
-        return this.state;
     };
     ModelImpl.prototype.subscribe = function (callback) {
         this._eventUpdated.add(callback);

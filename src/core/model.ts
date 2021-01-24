@@ -41,8 +41,8 @@ class ModelImpl<T> implements Model<T> {
         this._eventUpdated = new Set<(state: T) => void>();
     }
 
-    getState() {
-        return { ...this.state };
+    get() {
+        return this.state;
     }
 
     query(action: string, payload?: any): any {
@@ -53,7 +53,7 @@ class ModelImpl<T> implements Model<T> {
         }
     }
 
-    update(action: string, payload?: any): T {
+    update(action: string, payload?: any) {
         try {
             this.state = this._update[action](payload, this.state);
             this._eventUpdated.forEach(e => {
@@ -61,7 +61,6 @@ class ModelImpl<T> implements Model<T> {
             });
         } catch (error) {
         }
-        return this.state;
     }
 
     subscribe(callback: (state: T) => void) {
