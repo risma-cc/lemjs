@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect } from 'react';
 /*!
  * makeModel: Create a model.
  */
@@ -10,20 +10,14 @@ export function makeModel(init) {
  *           connection between the update event and React Hooks dispatch.
  */
 export function useModel(model) {
-    var _a = React.useState(model), _model = _a[0], setModel = _a[1];
-    // const cb = (s: T) => {
-    //     setState(s)
-    // }
-    // useEffect(() => {
-    //     model.subscribe(setState);
-    //     return () => {
-    //         model.unsubscribe(setState);
-    //     }
-    // }, [ state ]);
-    return useMemo(function () {
-        setModel(model);
-        return _model.get();
-    }, [_model]);
+    var _a = React.useState(model.get()), state = _a[0], setState = _a[1];
+    useEffect(function () {
+        model.subscribe(setState);
+        return function () {
+            model.unsubscribe(setState);
+        };
+    }, [state]);
+    return state;
 }
 var ModelImpl = /** @class */ (function () {
     function ModelImpl(init) {
