@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { Model, ModelInit } from '../index';
 
 /*!
@@ -13,15 +13,12 @@ export function makeModel<T>(init: ModelInit<T>): Model<T> {
  *           connection between the update event and React Hooks dispatch.
  */
 export function useModel<T>(model: Model<T>): T {
-    const [ state, setState ] = React.useState((model as ModelImpl<T>).state);
-    const onUpdated = (s: T) => {
-        setState(s);
-    }
+    const [ state, setState ] = React.useState(model.get());
 
-    React.useEffect(() => {
-        model.subscribe(onUpdated);
+    useEffect(() => {
+        model.subscribe(setState);
         return () => {
-            model.unsubscribe(onUpdated);
+            model.unsubscribe(setState);
         }
     }, [ state ]);
 
