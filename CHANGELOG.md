@@ -3,7 +3,7 @@
 ## V0.3.0
 ### Features
 - HTTP: API supports path parameters in URL, e.g. /user/{id}
-- HTTP: HTTP client's default response and error handlers
+- HTTP: Interceptors of request, response and error
 - HTTP: Mock is disabled when the enviroment MOCK is "none"
 
 ### Changed

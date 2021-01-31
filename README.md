@@ -132,7 +132,8 @@ https://github.com/risma-cc/lemjs
                 return { answer: 'Hello ' + name };
             },
             /* 错误处理，包括网络失败、HTTP非200状态等。 */
-            error: (error: Error, request: HttpRequest) => {
+            error: (error: any, request: HttpRequest) => {
+                return error
             },
             /*
              * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
@@ -157,15 +158,35 @@ https://github.com/risma-cc/lemjs
         },
         /* 默认配置选项。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultConfig: { },
-        /* 默认响应处理。如果HttpAPI中定义了response，则不调用默认响应处理方法。 */
-        defaultResponse: (response: any, request: HttpRequest) => {
-            /* 响应结果处理，可以修改返回的响应数据。 */
-            return response;
-        },
-        /* 默认错误处理。如果HttpAPI中定义了error，则不调用默认错误处理方法。 */
-        defaultError: (error: any, request: HttpRequest) => {
-            /* 错误处理 */
-        },
+        /* 请求拦截器 */
+        requestInterceptors: [
+            (request: HttpRequest) => {
+                /* 请求数据处理，可以修改返回的请求数据。如果返回false，则取消请求。 */
+                return request;
+            }
+        ],
+        /* 响应拦截器 */
+        responseInterceptors: [
+            (response: any, request: HttpRequest) => {
+                /* 响应结果处理，可以修改返回的响应数据。 */
+                return response;
+            },
+            (response: any, request: HttpRequest) => {
+                /* 可以抛出异常终止响应处理，转为错误处理。 */
+                throw new Error('I am tired');
+            },
+            async (response: any, request: HttpRequest) => {
+                /* 如果是异步方法，可以返回Promise.reject，转为错误处理 */
+                return Promise.reject('I am sad');
+            },
+        ],
+        /* 错误拦截器 */
+        errorInterceptors: [
+            (error: any, request: HttpRequest) => {
+                /* 错误处理，可以修改返回的错误信息。 */
+                return error;
+            }
+        ],
     });
 
 ### 使用HTTP服务接口

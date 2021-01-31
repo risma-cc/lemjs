@@ -75,6 +75,9 @@ export interface HttpRequestOptions {
     config?: HttpConfig | (() => HttpConfig);
 }
 export { httpRequest, httpGet, httpPost } from './core/http';
+export declare type RequestHandler = (request: HttpRequest) => HttpRequest | false | Promise<HttpRequest | false>;
+export declare type ResponseHandler = (response: any, request: HttpRequest) => any | Promise<any>;
+export declare type ErrorHandler = (error: Error, request: HttpRequest) => any | Promise<any>;
 /*!
  * HttpAPI: Definition of HTTP API.
  */
@@ -82,11 +85,11 @@ export interface HttpAPI extends HttpRequest {
     /*!
      * response: Process response data and return them.
      */
-    response?: (response: any, request: HttpRequest) => any;
+    response?: ResponseHandler;
     /*!
      * error: Handles error.
      */
-    error?: (error: Error, request: HttpRequest) => any;
+    error?: ErrorHandler;
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
      * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
@@ -101,8 +104,9 @@ export interface HttpClientInit {
     baseURL?: string;
     defaultParams?: HttpParams | (() => HttpParams);
     defaultConfig?: HttpConfig | (() => HttpConfig);
-    defaultResponse?: (response: any, request: HttpRequest) => any;
-    defaultError?: (error: Error, request: HttpRequest) => any;
+    requestInterceptors?: RequestHandler[];
+    responseInterceptors?: ResponseHandler[];
+    errorInterceptors?: ErrorHandler[];
 }
 /*!
  * HttpClient: The client for providing encapsulated HTTP APIs.
@@ -112,8 +116,9 @@ export interface HttpClient {
     baseURL: string;
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
-    defaultResponse?: (response: any, request: HttpRequest) => any;
-    defaultError?: (error: Error, request: HttpRequest) => any;
+    requestInterceptors?: RequestHandler[];
+    responseInterceptors?: ResponseHandler[];
+    errorInterceptors?: ErrorHandler[];
     /*!
      * fetch: Asynchronous handler of the API request and response.
      * Request:

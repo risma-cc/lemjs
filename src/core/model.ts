@@ -53,7 +53,7 @@ class ModelImpl<T> implements Model<T> {
     update(action: string, payload?: any) {
         try {
             this.state = this._update[action](payload, this.state);
-            this._eventUpdated.forEach(e => {
+            this._eventUpdated.forEach((e) => {
                 e(this.state);
             });
         } catch (error) {

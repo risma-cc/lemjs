@@ -6,7 +6,10 @@ import {
     HttpClientInit,
     HttpConfig,
     HttpParams,
-    HttpRequestOptions
+    HttpRequestOptions,
+    RequestHandler,
+    ResponseHandler,
+    ErrorHandler,
 } from '../index';
 
 /*!
@@ -36,9 +39,9 @@ export function FormBody(elements: FormElement[]): FormData {
  */
 export async function httpRequest(request: HttpRequest) {
     let url = request.url;
-    let params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
+    const params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
     // Process URL path parameters
-    let pathParams = url.match(/{(\S+)}/g);
+    const pathParams = url.match(/{(\S+)}/g);
     if (pathParams) {
         for (let p of pathParams) {
             let n = p.slice(1, -1)
@@ -50,11 +53,11 @@ export async function httpRequest(request: HttpRequest) {
         }
     }
     // Process URL query parameters
-    let queryParams = params.toString();
+    const queryParams = params.toString();
     if (queryParams.length > 0) {
         url += '?' + queryParams;
     }
-    let resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
+    const resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
 
     // Check HTTP status and parse response
     if (resp.status >= 200 && resp.status < 300) {
@@ -74,7 +77,7 @@ export async function httpRequest(request: HttpRequest) {
         return await resp.text();
     }
     if (resp.status === 301 || resp.status === 302) {   // Redirect
-        let l = resp.headers.get('Location')
+        const l = resp.headers.get('Location')
         window.location.assign(l == null ? '' : l);
     }
     return Promise.reject(resp.statusText);
@@ -103,7 +106,7 @@ export async function httpPost(url: string, params?: HttpParams, config?: HttpCo
 }
 
 /*！
- * makeHttpClient: Create an HTTP client.s
+ * makeHttpClient: Create an HTTP client.
  */
 export function makeHttpClient(init: HttpClientInit): HttpClient {
     return new HttpClientImpl(init);
@@ -114,16 +117,18 @@ class HttpClientImpl implements HttpClient {
     baseURL: string;
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
-    defaultResponse?: (response: any, request: HttpRequest) => any;
-    defaultError?: (error: Error, request: HttpRequest) => any;
+    requestInterceptors?: RequestHandler[];
+    responseInterceptors?: ResponseHandler[];
+    errorInterceptors?: ErrorHandler[];
 
     constructor(init: HttpClientInit) {
         this.httpAPIs = init.httpAPIs;
         this.baseURL = init.baseURL ? init.baseURL : "";
         this.defaultParams = init.defaultParams ? init.defaultParams : {};
         this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
-        this.defaultResponse = init.defaultResponse;
-        this.defaultError = init.defaultError;
+        this.requestInterceptors = init.requestInterceptors;
+        this.responseInterceptors = init.responseInterceptors;
+        this.errorInterceptors = init.errorInterceptors;
     }
 
     async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
@@ -138,7 +143,7 @@ class HttpClientImpl implements HttpClient {
         }
 
         // Make a request object
-        let request = {
+        let request: HttpRequest = {
             url: this.baseURL + (options?.url ? options.url : httpAPI.url),
             params: {
                 ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
@@ -153,6 +158,16 @@ class HttpClientImpl implements HttpClient {
         };
 
         try {
+            if (this.requestInterceptors) {
+                for (let handler of this.requestInterceptors) {
+                    const req = await handler(request);
+                    if (!req) {
+                        return Promise.reject(await this.errorProc(httpAPI, request, 'The API \"' + api + '\" request was cancelled.'));
+                    }
+                    request = req;
+                }
+            }
+
             // In case of non-production env and mock enabled,
             // if a mock handler is defined, skips HTTP request.
             if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
@@ -164,23 +179,33 @@ class HttpClientImpl implements HttpClient {
             let data = await httpRequest(request);
             return await this.responseProc(httpAPI, request, data);
         } catch (error) {
-            let errorHanlder = httpAPI['error'];
-            if (errorHanlder) {
-                await errorHanlder(error, request);
-            } else if (this.defaultError) {
-                await this.defaultError(error, request);
-            }
-            return Promise.reject(error);
+            return Promise.reject(await this.errorProc(httpAPI, request, error));
         }
     }
 
     private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
-        let responseHanlder = api['response'];
-        if (responseHanlder) {
-            data = await responseHanlder(data, request);
-        } else if (this.defaultResponse) {
-            data = await this.defaultResponse(data, request);
+        try {
+            this.responseInterceptors && this.responseInterceptors.forEach(async (handler) => {
+                data = await handler(data, request);
+            });
+            const responseHanlder = api['response'];
+            if (responseHanlder) {
+                data = await responseHanlder(data, request);
+            }
+            return data;
+        } catch (error) {
+            return Promise.reject(error);
         }
-        return data;
+    }
+
+    private async errorProc(api: HttpAPI, request: HttpRequest, error: any) {
+        this.errorInterceptors && this.errorInterceptors.forEach(async (handler) => {
+            error = await handler(error, request);
+        });
+        let errorHanlder = api['error'];
+        if (errorHanlder) {
+            error = await errorHanlder(error, request);
+        }
+        return error;
     }
 }

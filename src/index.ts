@@ -1,6 +1,9 @@
 /*!
  * ModelInit: Definition of model for initialization
  */
+
+import { Http2ServerResponse } from 'http2';
+
 export interface ModelInit<T> {
     /*!
      * state: Initial values of the state
@@ -91,6 +94,10 @@ export interface HttpRequestOptions {
 
 export { httpRequest, httpGet, httpPost } from './core/http';
 
+export type RequestHandler = (request: HttpRequest) => HttpRequest | false | Promise<HttpRequest | false>;
+export type ResponseHandler = (response: any, request: HttpRequest) => any | Promise<any>;
+export type ErrorHandler = (error: Error, request: HttpRequest) => any | Promise<any>;
+
 /*!
  * HttpAPI: Definition of HTTP API.
  */
@@ -98,12 +105,12 @@ export interface HttpAPI extends HttpRequest {
     /*!
      * response: Process response data and return them.
      */
-    response?: (response: any, request: HttpRequest) => any,
+    response?: ResponseHandler,
 
     /*!
      * error: Handles error.
      */
-    error?: (error: Error, request: HttpRequest) => any,
+    error?: ErrorHandler,
 
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
@@ -120,8 +127,9 @@ export interface HttpClientInit {
     baseURL?: string,
     defaultParams?: HttpParams | (() => HttpParams),
     defaultConfig?: HttpConfig | (() => HttpConfig),
-    defaultResponse?: (response: any, request: HttpRequest) => any,
-    defaultError?: (error: Error, request: HttpRequest) => any,
+    requestInterceptors?: RequestHandler[],
+    responseInterceptors?: ResponseHandler[],
+    errorInterceptors?: ErrorHandler[],
 }
 
 /*!
@@ -132,8 +140,9 @@ export interface HttpClient {
     baseURL: string,
     defaultParams: HttpParams | (() => HttpParams),
     defaultConfig: HttpConfig | (() => HttpConfig),
-    defaultResponse?: (response: any, request: HttpRequest) => any,
-    defaultError?: (error: Error, request: HttpRequest) => any,
+    requestInterceptors?: RequestHandler[],
+    responseInterceptors?: ResponseHandler[],
+    errorInterceptors?: ErrorHandler[],
 
     /*!
      * fetch: Asynchronous handler of the API request and response.
