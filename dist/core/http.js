@@ -159,7 +159,7 @@ export function httpPost(url, params, config) {
     });
 }
 /*！
- * makeHttpClient: Create an HTTP client.s
+ * makeHttpClient: Create an HTTP client.
  */
 export function makeHttpClient(init) {
     return new HttpClientImpl(init);

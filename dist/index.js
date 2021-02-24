@@ -1,6 +1,3 @@
-/*!
- * ModelInit: Definition of model for initialization
- */
 export { makeModel, useModel } from './core/model';
 export { JsonBody, FormBody } from './core/http';
 ;

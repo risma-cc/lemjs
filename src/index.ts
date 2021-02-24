@@ -1,9 +1,6 @@
 /*!
  * ModelInit: Definition of model for initialization
  */
-
-import { Http2ServerResponse } from 'http2';
-
 export interface ModelInit<T> {
     /*!
      * state: Initial values of the state
@@ -13,12 +10,12 @@ export interface ModelInit<T> {
     /*!
      * query: Defines functions of query actions.
      */
-    query?: Record<symbol | string, (payload: any, state: T) => any>;
+    query?: { [x: string]: (payload: any, state: T) => any };
 
     /*!
      * update: Defines functions of update actions whose returning values will be set to the state.
      */
-    update?: Record<symbol | string, (payload: any, state: T) => T>;
+    update?: { [x: string]: (payload: any, state: T) => T };
 }
 
 /*!
@@ -56,7 +53,7 @@ export { makeModel, useModel } from './core/model';
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
-export type HttpParams = Record<string, string>;
+export type HttpParams = { [x: string]: string };
 
 /*!
  * HttpConfig: Configuration options of HTTP request.
@@ -123,7 +120,7 @@ export interface HttpAPI extends HttpRequest {
  * HttpClientInit: Definition of an HTTP APIs client for initialization.
  */
 export interface HttpClientInit {
-    httpAPIs: Record<string, HttpAPI>,
+    httpAPIs: { [x: string]: HttpAPI },
     baseURL?: string,
     defaultParams?: HttpParams | (() => HttpParams),
     defaultConfig?: HttpConfig | (() => HttpConfig),
@@ -136,7 +133,7 @@ export interface HttpClientInit {
  * HttpClient: The client for providing encapsulated HTTP APIs.
  */
 export interface HttpClient {
-    httpAPIs: Record<string, HttpAPI>,
+    httpAPIs: { [x: string]: HttpAPI },
     baseURL: string,
     defaultParams: HttpParams | (() => HttpParams),
     defaultConfig: HttpConfig | (() => HttpConfig),

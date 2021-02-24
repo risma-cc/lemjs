@@ -113,7 +113,7 @@ export function makeHttpClient(init: HttpClientInit): HttpClient {
 }
 
 class HttpClientImpl implements HttpClient {
-    httpAPIs: Record<string, HttpAPI>;
+    httpAPIs: { [x: string]: HttpAPI };
     baseURL: string;
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
