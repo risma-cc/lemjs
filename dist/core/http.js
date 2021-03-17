@@ -176,7 +176,7 @@ var HttpClientImpl = /** @class */ (function () {
     }
     HttpClientImpl.prototype.fetch = function (api, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var httpAPI, request, _i, _a, handler, req, _b, _c, mockHandler, data, error_1, _d, _e;
+            var httpAPI, request, _i, _a, interceptor, req, _b, _c, mockHandler, data, error_1, _d, _e;
             return __generator(this, function (_f) {
                 switch (_f.label) {
                     case 0:
@@ -202,8 +202,8 @@ var HttpClientImpl = /** @class */ (function () {
                         _f.label = 2;
                     case 2:
                         if (!(_i < _a.length)) return [3 /*break*/, 7];
-                        handler = _a[_i];
-                        return [4 /*yield*/, handler(request)];
+                        interceptor = _a[_i];
+                        return [4 /*yield*/, interceptor(request)];
                     case 3:
                         req = _f.sent();
                         if (!!req) return [3 /*break*/, 5];
@@ -239,61 +239,67 @@ var HttpClientImpl = /** @class */ (function () {
     };
     HttpClientImpl.prototype.responseProc = function (api, request, data) {
         return __awaiter(this, void 0, void 0, function () {
-            var responseHanlder, error_2;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _i, _a, interceptor, responseHanlder, error_2;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 3, , 4]);
-                        this.responseInterceptors && this.responseInterceptors.forEach(function (handler) { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, handler(data, request)];
-                                    case 1:
-                                        data = _a.sent();
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); });
-                        responseHanlder = api['response'];
-                        if (!responseHanlder) return [3 /*break*/, 2];
-                        return [4 /*yield*/, responseHanlder(data, request)];
+                        _b.trys.push([0, 7, , 8]);
+                        if (!this.responseInterceptors) return [3 /*break*/, 4];
+                        _i = 0, _a = this.responseInterceptors;
+                        _b.label = 1;
                     case 1:
-                        data = _a.sent();
-                        _a.label = 2;
-                    case 2: return [2 /*return*/, data];
+                        if (!(_i < _a.length)) return [3 /*break*/, 4];
+                        interceptor = _a[_i];
+                        return [4 /*yield*/, interceptor(data, request)];
+                    case 2:
+                        data = _b.sent();
+                        _b.label = 3;
                     case 3:
-                        error_2 = _a.sent();
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        responseHanlder = api['response'];
+                        if (!responseHanlder) return [3 /*break*/, 6];
+                        return [4 /*yield*/, responseHanlder(data, request)];
+                    case 5:
+                        data = _b.sent();
+                        _b.label = 6;
+                    case 6: return [2 /*return*/, data];
+                    case 7:
+                        error_2 = _b.sent();
                         return [2 /*return*/, Promise.reject(error_2)];
-                    case 4: return [2 /*return*/];
+                    case 8: return [2 /*return*/];
                 }
             });
         });
     };
     HttpClientImpl.prototype.errorProc = function (api, request, error) {
         return __awaiter(this, void 0, void 0, function () {
-            var errorHanlder;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _i, _a, interceptor, errorHanlder;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        this.errorInterceptors && this.errorInterceptors.forEach(function (handler) { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, handler(error, request)];
-                                    case 1:
-                                        error = _a.sent();
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); });
-                        errorHanlder = api['error'];
-                        if (!errorHanlder) return [3 /*break*/, 2];
-                        return [4 /*yield*/, errorHanlder(error, request)];
+                        if (!this.errorInterceptors) return [3 /*break*/, 4];
+                        _i = 0, _a = this.errorInterceptors;
+                        _b.label = 1;
                     case 1:
-                        error = _a.sent();
-                        _a.label = 2;
-                    case 2: return [2 /*return*/, error];
+                        if (!(_i < _a.length)) return [3 /*break*/, 4];
+                        interceptor = _a[_i];
+                        return [4 /*yield*/, interceptor(error, request)];
+                    case 2:
+                        error = _b.sent();
+                        _b.label = 3;
+                    case 3:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        errorHanlder = api['error'];
+                        if (!errorHanlder) return [3 /*break*/, 6];
+                        return [4 /*yield*/, errorHanlder(error, request)];
+                    case 5:
+                        error = _b.sent();
+                        _b.label = 6;
+                    case 6: return [2 /*return*/, error];
                 }
             });
         });

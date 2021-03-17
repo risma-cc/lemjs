@@ -81,9 +81,11 @@ export interface HttpRequestOptions {
     config?: HttpConfig | (() => HttpConfig);
 }
 export { httpRequest, httpGet, httpPost } from './core/http';
-export declare type RequestHandler = (request: HttpRequest) => HttpRequest | false | Promise<HttpRequest | false>;
-export declare type ResponseHandler = (response: any, request: HttpRequest) => any | Promise<any>;
-export declare type ErrorHandler = (error: Error, request: HttpRequest) => any | Promise<any>;
+export declare type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
+export declare type ResponseHandler = (response: any, request: HttpRequest) => any;
+export declare type ResponseAsyncHandler = (response: any, request: HttpRequest) => Promise<any>;
+export declare type ErrorHandler = (error: Error, request: HttpRequest) => any;
+export declare type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
 /*!
  * HttpAPI: Definition of HTTP API.
  */
@@ -113,8 +115,8 @@ export interface HttpClientInit {
     defaultParams?: HttpParams | (() => HttpParams);
     defaultConfig?: HttpConfig | (() => HttpConfig);
     requestInterceptors?: RequestHandler[];
-    responseInterceptors?: ResponseHandler[];
-    errorInterceptors?: ErrorHandler[];
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
 }
 /*!
  * HttpClient: The client for providing encapsulated HTTP APIs.
@@ -127,8 +129,8 @@ export interface HttpClient {
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
     requestInterceptors?: RequestHandler[];
-    responseInterceptors?: ResponseHandler[];
-    errorInterceptors?: ErrorHandler[];
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
     /*!
      * fetch: Asynchronous handler of the API request and response.
      * Request:

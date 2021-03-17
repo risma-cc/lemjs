@@ -10,6 +10,8 @@ import {
     RequestHandler,
     ResponseHandler,
     ErrorHandler,
+    ResponseAsyncHandler,
+    ErrorAsyncHandler,
 } from '../index';
 
 /*!
@@ -118,8 +120,8 @@ class HttpClientImpl implements HttpClient {
     defaultParams: HttpParams | (() => HttpParams);
     defaultConfig: HttpConfig | (() => HttpConfig);
     requestInterceptors?: RequestHandler[];
-    responseInterceptors?: ResponseHandler[];
-    errorInterceptors?: ErrorHandler[];
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
 
     constructor(init: HttpClientInit) {
         this.httpAPIs = init.httpAPIs;
@@ -138,7 +140,7 @@ class HttpClientImpl implements HttpClient {
             if (!httpAPI) {
                 return Promise.reject('The API \"' + api + '\" does NOT exist');
             }
-        } catch(error) {
+        } catch (error) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
 
@@ -159,8 +161,8 @@ class HttpClientImpl implements HttpClient {
 
         try {
             if (this.requestInterceptors) {
-                for (let handler of this.requestInterceptors) {
-                    const req = await handler(request);
+                for (let interceptor of this.requestInterceptors) {
+                    const req = await interceptor(request);
                     if (!req) {
                         return Promise.reject(await this.errorProc(httpAPI, request, 'The API \"' + api + '\" request was cancelled.'));
                     }
@@ -185,9 +187,11 @@ class HttpClientImpl implements HttpClient {
 
     private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
         try {
-            this.responseInterceptors && this.responseInterceptors.forEach(async (handler) => {
-                data = await handler(data, request);
-            });
+            if (this.responseInterceptors) {
+                for (let interceptor of this.responseInterceptors) {
+                    data = await interceptor(data, request);
+                }
+            }
             const responseHanlder = api['response'];
             if (responseHanlder) {
                 data = await responseHanlder(data, request);
@@ -199,10 +203,12 @@ class HttpClientImpl implements HttpClient {
     }
 
     private async errorProc(api: HttpAPI, request: HttpRequest, error: any) {
-        this.errorInterceptors && this.errorInterceptors.forEach(async (handler) => {
-            error = await handler(error, request);
-        });
-        let errorHanlder = api['error'];
+        if (this.errorInterceptors) {
+            for (let interceptor of this.errorInterceptors) {
+                error = await interceptor(error, request);
+            }
+        }
+        const errorHanlder = api['error'];
         if (errorHanlder) {
             error = await errorHanlder(error, request);
         }
