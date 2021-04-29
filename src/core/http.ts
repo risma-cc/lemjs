@@ -186,32 +186,32 @@ class HttpClientImpl implements HttpClient {
     }
 
     private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
-        try {
-            if (this.responseInterceptors) {
-                for (let interceptor of this.responseInterceptors) {
-                    data = await interceptor(data, request);
-                }
+        if (this.responseInterceptors) {
+            for (let interceptor of this.responseInterceptors) {
+                data = await interceptor(data, request);
             }
-            const responseHanlder = api['response'];
-            if (responseHanlder) {
-                data = await responseHanlder(data, request);
-            }
-            return data;
-        } catch (error) {
-            return Promise.reject(error);
         }
+        const responseHanlder = api['response'];
+        if (responseHanlder) {
+            data = await responseHanlder(data, request);
+        }
+        return data;
     }
 
     private async errorProc(api: HttpAPI, request: HttpRequest, error: any) {
-        if (this.errorInterceptors) {
-            for (let interceptor of this.errorInterceptors) {
-                error = await interceptor(error, request);
+        try {
+            if (this.errorInterceptors) {
+                for (let interceptor of this.errorInterceptors) {
+                    error = await interceptor(error, request);
+                }
             }
+            let errorHanlder = api['error'];
+            if (errorHanlder) {
+                error = await errorHanlder(error, request);
+            }
+            return error;
+        } catch {
+            return error;
         }
-        const errorHanlder = api['error'];
-        if (errorHanlder) {
-            error = await errorHanlder(error, request);
-        }
-        return error;
     }
 }

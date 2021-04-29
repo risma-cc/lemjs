@@ -239,11 +239,18 @@ var HttpClientImpl = /** @class */ (function () {
     };
     HttpClientImpl.prototype.responseProc = function (api, request, data) {
         return __awaiter(this, void 0, void 0, function () {
+<<<<<<< HEAD
             var _i, _a, interceptor, responseHanlder, error_2;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _b.trys.push([0, 7, , 8]);
+=======
+            var _i, _a, interceptor, responseHanlder;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+>>>>>>> 25d3171608fe7bafb73e98b653ea0d8296d9239a
                         if (!this.responseInterceptors) return [3 /*break*/, 4];
                         _i = 0, _a = this.responseInterceptors;
                         _b.label = 1;
@@ -265,16 +272,20 @@ var HttpClientImpl = /** @class */ (function () {
                         data = _b.sent();
                         _b.label = 6;
                     case 6: return [2 /*return*/, data];
+<<<<<<< HEAD
                     case 7:
                         error_2 = _b.sent();
                         return [2 /*return*/, Promise.reject(error_2)];
                     case 8: return [2 /*return*/];
+=======
+>>>>>>> 25d3171608fe7bafb73e98b653ea0d8296d9239a
                 }
             });
         });
     };
     HttpClientImpl.prototype.errorProc = function (api, request, error) {
         return __awaiter(this, void 0, void 0, function () {
+<<<<<<< HEAD
             var _i, _a, interceptor, errorHanlder;
             return __generator(this, function (_b) {
                 switch (_b.label) {
@@ -282,13 +293,28 @@ var HttpClientImpl = /** @class */ (function () {
                         if (!this.errorInterceptors) return [3 /*break*/, 4];
                         _i = 0, _a = this.errorInterceptors;
                         _b.label = 1;
+=======
+            var _i, _a, interceptor, errorHanlder, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 7, , 8]);
+                        if (!this.errorInterceptors) return [3 /*break*/, 4];
+                        _i = 0, _a = this.errorInterceptors;
+                        _c.label = 1;
+>>>>>>> 25d3171608fe7bafb73e98b653ea0d8296d9239a
                     case 1:
                         if (!(_i < _a.length)) return [3 /*break*/, 4];
                         interceptor = _a[_i];
                         return [4 /*yield*/, interceptor(error, request)];
                     case 2:
+<<<<<<< HEAD
                         error = _b.sent();
                         _b.label = 3;
+=======
+                        error = _c.sent();
+                        _c.label = 3;
+>>>>>>> 25d3171608fe7bafb73e98b653ea0d8296d9239a
                     case 3:
                         _i++;
                         return [3 /*break*/, 1];
@@ -297,9 +323,19 @@ var HttpClientImpl = /** @class */ (function () {
                         if (!errorHanlder) return [3 /*break*/, 6];
                         return [4 /*yield*/, errorHanlder(error, request)];
                     case 5:
+<<<<<<< HEAD
                         error = _b.sent();
                         _b.label = 6;
                     case 6: return [2 /*return*/, error];
+=======
+                        error = _c.sent();
+                        _c.label = 6;
+                    case 6: return [2 /*return*/, error];
+                    case 7:
+                        _b = _c.sent();
+                        return [2 /*return*/, error];
+                    case 8: return [2 /*return*/];
+>>>>>>> 25d3171608fe7bafb73e98b653ea0d8296d9239a
                 }
             });
         });
