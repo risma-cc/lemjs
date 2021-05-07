@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { Model, ModelInit } from '../index';
 
 /*!
@@ -6,23 +5,6 @@ import { Model, ModelInit } from '../index';
  */
 export function makeModel<T>(init: ModelInit<T>): Model<T> {
     return new ModelImpl<T>(init);
-}
-
-/*!
- * useModel: Uses the model similar to React Hooks, and inlinely involves
- *           connection between the update event and React Hooks dispatch.
- */
-export function useModel<T>(model: Model<T>): T {
-    const [ state, setState ] = React.useState(model.get());
-
-    useEffect(() => {
-        model.subscribe(setState);
-        return () => {
-            model.unsubscribe(setState);
-        }
-    }, [ state ]);
-
-    return state;
 }
 
 class ModelImpl<T> implements Model<T> {

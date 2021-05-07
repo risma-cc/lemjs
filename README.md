@@ -1,7 +1,7 @@
 # LemJS
-Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数据流共享方案，加入编码风格一致的WebAPI封装，以及对React Hooks支持与扩展，可以作为一个前端应用框架的基础。
+Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数据流共享方案，加入编码风格一致的WebAPI封装，可以作为一个前端应用框架的基础。
 
-Lem采用Typescript开发，同时支持在Javascript和Typescritp中使用。核心逻辑代码只使用原生标准库，原则上对各个前端主流框架的支持与整合都是将来可以考虑的。目前，先只加入了对React Hooks的支持。
+Lem采用Typescript开发，同时支持在Javascript和Typescritp中使用。核心逻辑代码只使用原生标准库，原则上对各个前端主流框架的支持与整合都是将来可以考虑的。
 
 Lem会保持自身的单纯性，不会像滚雪球一样越来越臃肿，也不会一味追求新潮而增加了学习成本。希望即使是Javascript和Typescript的初学者，也能在习得它的设计模式与编码风格之后，即可轻松玩转。
 
@@ -47,8 +47,14 @@ https://github.com/risma-cc/lemjs
 #### React函数组件，使用Hooks
 
     export default () => {
-        /* 类Hooks的模型使用方法。 */
-        const state = useModel(myModel);
+        const [ state, setState ] = React.useState(myModel.get());
+
+        useEffect(() => {
+            myModel.subscribe(setState);
+            return () => {
+                myModel.unsubscribe(setState);
+            }
+        }, [ state ]);
 
         return (
             <div>

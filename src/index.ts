@@ -48,7 +48,7 @@ export interface Model<T> {
     unsubscribe: (callback: (state: T) => void) => void;
 }
 
-export { makeModel, useModel } from './core/model';
+export { makeModel } from './core/model';
 
 /*!
  * HttpParams: Similar to URLSearchParams.

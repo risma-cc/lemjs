@@ -14,6 +14,7 @@
 - Model: code small
 
 ### Removed
+- Model: React useModel
 - HTTP: The enviroment MOCK_DISABLED
 
 ## V0.2.1

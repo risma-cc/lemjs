@@ -1,23 +1,8 @@
-import React, { useEffect } from 'react';
 /*!
  * makeModel: Create a model.
  */
 export function makeModel(init) {
     return new ModelImpl(init);
-}
-/*!
- * useModel: Uses the model similar to React Hooks, and inlinely involves
- *           connection between the update event and React Hooks dispatch.
- */
-export function useModel(model) {
-    var _a = React.useState(model.get()), state = _a[0], setState = _a[1];
-    useEffect(function () {
-        model.subscribe(setState);
-        return function () {
-            model.unsubscribe(setState);
-        };
-    }, [state]);
-    return state;
 }
 var ModelImpl = /** @class */ (function () {
     function ModelImpl(init) {
