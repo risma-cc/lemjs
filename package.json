@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf ./dist",
-    "compile": "npm run clean && tsc"
+    "build": "npm run clean && tsc"
   },
   "keywords": [
     "lemjs"
