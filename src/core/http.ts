@@ -125,39 +125,45 @@ class HttpClientImpl implements HttpClient {
 
     constructor(init: HttpClientInit) {
         this.httpAPIs = init.httpAPIs;
-        this.baseURL = init.baseURL ? init.baseURL : "";
-        this.defaultParams = init.defaultParams ? init.defaultParams : {};
-        this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
+        this.baseURL = init.baseURL || "";
+        this.defaultParams = init.defaultParams || {};
+        this.defaultConfig = init.defaultConfig || {};
         this.requestInterceptors = init.requestInterceptors;
         this.responseInterceptors = init.responseInterceptors;
         this.errorInterceptors = init.errorInterceptors;
     }
 
     async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
-        var httpAPI;
-        try {
-            httpAPI = this.httpAPIs[api];
-            if (!httpAPI) {
-                return Promise.reject('The API \"' + api + '\" does NOT exist');
-            }
-        } catch (error) {
+        let httpAPI = this.httpAPIs[api];
+        if (!httpAPI) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
 
         // Make a request object
         let request: HttpRequest = {
             url: this.baseURL + (options?.url ? options.url : httpAPI.url),
-            params: {
-                ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
-                ...((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params),
-                ...((typeof options?.params == 'function') ? options?.params() : options?.params),
-            },
-            config: {
-                ...((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig),
-                ...((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config),
-                ...((typeof options?.config == 'function') ? options?.config() : options?.config),
-            }
+            params: merge(merge(
+                (typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
+                (typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params
+            ), (typeof options?.params == 'function') ? options?.params() : options?.params),
+            config: merge(merge(
+                (typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
+                (typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config
+            ), (typeof options?.config == 'function') ? options?.config() : options?.config)
         };
+        // let request: HttpRequest = {
+        //     url: this.baseURL + (options?.url ? options.url : httpAPI.url),
+        //     params: {
+        //         ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
+        //         ...((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params),
+        //         ...((typeof options?.params == 'function') ? options?.params() : options?.params),
+        //     },
+        //     config: {
+        //         ...((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig),
+        //         ...((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config),
+        //         ...((typeof options?.config == 'function') ? options?.config() : options?.config),
+        //     }
+        // };
 
         try {
             if (this.requestInterceptors) {
@@ -191,9 +197,9 @@ class HttpClientImpl implements HttpClient {
                 data = await interceptor(data, request);
             }
         }
-        const responseHanlder = api['response'];
-        if (responseHanlder) {
-            data = await responseHanlder(data, request);
+        const respHanlder = api['response'];
+        if (respHanlder) {
+            data = await respHanlder(data, request);
         }
         return data;
     }
@@ -205,7 +211,7 @@ class HttpClientImpl implements HttpClient {
                     error = await interceptor(error, request);
                 }
             }
-            let errorHanlder = api['error'];
+            const errorHanlder = api['error'];
             if (errorHanlder) {
                 error = await errorHanlder(error, request);
             }
@@ -214,4 +220,19 @@ class HttpClientImpl implements HttpClient {
             return error;
         }
     }
+}
+
+function merge(obj1: any, obj2: any) {
+    let key;
+    for (key in obj2) {
+        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
+        // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
+        obj1[key] =
+            obj1[key] &&
+                obj1[key].toString() === "[object Object]" &&
+                (obj2[key] && obj2[key].toString() === "[object Object]")
+                ? merge(obj1[key], obj2[key])
+                : (obj1[key] = obj2[key]);
+    }
+    return obj1;
 }

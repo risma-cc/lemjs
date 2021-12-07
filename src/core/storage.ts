@@ -28,10 +28,7 @@ export namespace SessionStorage {
      */
     export function get(key: string): any {
         const data = sessionStorage.getItem(key);
-        if (data === null) {
-            return null;
-        }
-        return JSON.parse(data);
+        return data ? JSON.parse(data): data;
     };
 
     /*!

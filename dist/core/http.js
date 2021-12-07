@@ -167,9 +167,9 @@ export function makeHttpClient(init) {
 var HttpClientImpl = /** @class */ (function () {
     function HttpClientImpl(init) {
         this.httpAPIs = init.httpAPIs;
-        this.baseURL = init.baseURL ? init.baseURL : "";
-        this.defaultParams = init.defaultParams ? init.defaultParams : {};
-        this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
+        this.baseURL = init.baseURL || "";
+        this.defaultParams = init.defaultParams || {};
+        this.defaultConfig = init.defaultConfig || {};
         this.requestInterceptors = init.requestInterceptors;
         this.responseInterceptors = init.responseInterceptors;
         this.errorInterceptors = init.errorInterceptors;
@@ -180,19 +180,14 @@ var HttpClientImpl = /** @class */ (function () {
             return __generator(this, function (_f) {
                 switch (_f.label) {
                     case 0:
-                        try {
-                            httpAPI = this.httpAPIs[api];
-                            if (!httpAPI) {
-                                return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
-                            }
-                        }
-                        catch (error) {
+                        httpAPI = this.httpAPIs[api];
+                        if (!httpAPI) {
                             return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
                         }
                         request = {
                             url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.url),
-                            params: __assign(__assign(__assign({}, ((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams)), ((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params)), ((typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params)),
-                            config: __assign(__assign(__assign({}, ((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig)), ((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config)), ((typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config))
+                            params: merge(merge((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams, (typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params), (typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params),
+                            config: merge(merge((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig, (typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config), (typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config)
                         };
                         _f.label = 1;
                     case 1:
@@ -239,7 +234,7 @@ var HttpClientImpl = /** @class */ (function () {
     };
     HttpClientImpl.prototype.responseProc = function (api, request, data) {
         return __awaiter(this, void 0, void 0, function () {
-            var _i, _a, interceptor, responseHanlder;
+            var _i, _a, interceptor, respHanlder;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -257,9 +252,9 @@ var HttpClientImpl = /** @class */ (function () {
                         _i++;
                         return [3 /*break*/, 1];
                     case 4:
-                        responseHanlder = api['response'];
-                        if (!responseHanlder) return [3 /*break*/, 6];
-                        return [4 /*yield*/, responseHanlder(data, request)];
+                        respHanlder = api['response'];
+                        if (!respHanlder) return [3 /*break*/, 6];
+                        return [4 /*yield*/, respHanlder(data, request)];
                     case 5:
                         data = _b.sent();
                         _b.label = 6;
@@ -306,3 +301,17 @@ var HttpClientImpl = /** @class */ (function () {
     };
     return HttpClientImpl;
 }());
+function merge(obj1, obj2) {
+    var key;
+    for (key in obj2) {
+        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
+        // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
+        obj1[key] =
+            obj1[key] &&
+                obj1[key].toString() === "[object Object]" &&
+                (obj2[key] && obj2[key].toString() === "[object Object]")
+                ? merge(obj1[key], obj2[key])
+                : (obj1[key] = obj2[key]);
+    }
+    return obj1;
+}

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## V0.3.1
+### Fixed
+- Code small
+
 ## V0.3.0
 ### Features
 - HTTP: API supports path parameters in URL, e.g. /user/{id}

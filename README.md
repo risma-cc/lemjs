@@ -28,14 +28,14 @@ https://github.com/risma-cc/lemjs
         /* 查询方法 */
         query: {
             'ab': (payload: any, state: A): any => {
-                return { a: state.a, b: 'B' };
+                return { a: state.a, b: state.answer };
             },
         },
         /* 更新方法 */
         update: {
             'add': (payload: any, state: A): A => {
                 let { x } = payload;
-                return { a: a + x };
+                return { ...state, a: a + x };
             },
             'set': (payload: any, state: A): A => {
                 return { ...state, ...payload };
