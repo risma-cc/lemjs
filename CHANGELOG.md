@@ -1,10 +1,11 @@
 # CHANGELOG
 
-## V0.3.1
+## V0.3.1 | 2021-12-08
 ### Fixed
 - Code small
+- HTTP: Deep merge request parameters and configs
 
-## V0.3.0
+## V0.3.0 | 2021-07-20
 ### Features
 - HTTP: API supports path parameters in URL, e.g. /user/{id}
 - HTTP: Interceptors of request, response and error
@@ -15,7 +16,7 @@
 - HTTP: Mock skips only request and not response/error
 
 ### Fixed
-- Model: code small
+- Model: Code small
 
 ### Removed
 - Model: React useModel

@@ -225,7 +225,8 @@ class HttpClientImpl implements HttpClient {
 function merge(obj1: any, obj2: any) {
     let key;
     for (key in obj2) {
-        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
+        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，
+        // 否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
         // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
         obj1[key] =
             obj1[key] &&
