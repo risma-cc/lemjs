@@ -10,12 +10,12 @@ export interface ModelInit<T> {
     /*!
      * query: Defines functions of query actions.
      */
-    query?: Record<symbol | string, (payload: {}, state: T) => any>;
+    query?: { [x: string]: (payload: any, state: T) => any };
 
     /*!
      * update: Defines functions of update actions whose returning values will be set to the state.
      */
-    update?: Record<symbol | string, (payload: {}, state: T) => T>;
+    update?: { [x: string]: (payload: any, state: T) => T };
 }
 
 /*!
@@ -25,17 +25,17 @@ export interface Model<T> {
     /*!
      * getState: Returns the values of state
      */
-    getState: () => T;
+    get: () => T;
 
     /*!
      * query: Dispatches a synchronous action to query the state.
      */
-    query: (action: string, payload: any) => any;
+    query: (action: string, payload?: any) => any;
 
     /*!
      * update: Dispatches a synchronous action to update the state.
      */
-    update: (action: string, payload: any) => T;
+    update: (action: string, payload?: any) => void;
 
     /*!
      * subscribe: Subscribes the update event.
@@ -48,12 +48,12 @@ export interface Model<T> {
     unsubscribe: (callback: (state: T) => void) => void;
 }
 
-export { makeModel, useModel } from './core/model';
+export { makeModel } from './core/model';
 
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
-export type HttpParams = Record<string, string>;
+export type HttpParams = { [x: string]: string };
 
 /*!
  * HttpConfig: Configuration options of HTTP request.
@@ -91,17 +91,29 @@ export interface HttpRequestOptions {
 
 export { httpRequest, httpGet, httpPost } from './core/http';
 
+export type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
+export type ResponseHandler = (response: any, request: HttpRequest) => any;
+export type ResponseAsyncHandler = (response: any, request: HttpRequest) => Promise<any>;
+export type ErrorHandler = (error: Error, request: HttpRequest) => any;
+export type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
+
 /*!
  * HttpAPI: Definition of HTTP API.
  */
-export interface HttpAPI {
-    request: HttpRequest,
-    response?: (response: any, request: HttpRequest) => any,
-    error?: (error: Error, request: HttpRequest) => any,
+export interface HttpAPI extends HttpRequest {
+    /*!
+     * response: Process response data and return them.
+     */
+    response?: ResponseHandler,
 
     /*!
-     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock value.
-     * When the environment variable NODE_ENV is "production" or MOCK_DISABLED is "true", it'll be ignored.
+     * error: Handles error.
+     */
+    error?: ErrorHandler,
+
+    /*!
+     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
+     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
      */
     mock?: (request: HttpRequest) => any,
 }
@@ -110,25 +122,31 @@ export interface HttpAPI {
  * HttpClientInit: Definition of an HTTP APIs client for initialization.
  */
 export interface HttpClientInit {
-    baseURL: string,
+    httpAPIs: { [x: string]: HttpAPI },
+    baseURL?: string,
     defaultParams?: HttpParams | (() => HttpParams),
     defaultConfig?: HttpConfig | (() => HttpConfig),
-    httpAPIs: Record<string, HttpAPI>,
+    requestInterceptors?: RequestHandler[],
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[],
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[],
 }
 
 /*!
  * HttpClient: The client for providing encapsulated HTTP APIs.
  */
 export interface HttpClient {
+    httpAPIs: { [x: string]: HttpAPI },
     baseURL: string,
     defaultParams: HttpParams | (() => HttpParams),
     defaultConfig: HttpConfig | (() => HttpConfig),
-    httpAPIs: Record<string, HttpAPI>,
+    requestInterceptors?: RequestHandler[],
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[],
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[],
 
     /*!
      * fetch: Asynchronous handler of the API request and response.
      * Request:
-     *   URL: Join the base URL and a sub-path (fetch options‘ url preferred to HttpAPI's)
+     *   URL: Join the base URL and a sub-path (fetch options‘ url has priority over HttpAPI's)
      *   Params: Combination of options' params, API's and client's default
      *   Config: Combination of options' config, API's and client's default 
      */

@@ -71,14 +71,27 @@ export function FormBody(elements) {
  */
 export function httpRequest(request) {
     return __awaiter(this, void 0, void 0, function () {
-        var url, params, resp, contentType, l;
+        var url, params, pathParams, _i, pathParams_1, p, n, v, queryParams, resp, contentType, l;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     url = request.url;
-                    params = (typeof request.params == 'function') ? request.params() : request.params;
-                    if (params) {
-                        url += '?' + (new URLSearchParams(params)).toString();
+                    params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
+                    pathParams = url.match(/{(\S+)}/g);
+                    if (pathParams) {
+                        for (_i = 0, pathParams_1 = pathParams; _i < pathParams_1.length; _i++) {
+                            p = pathParams_1[_i];
+                            n = p.slice(1, -1);
+                            v = params.get(n);
+                            if (v) {
+                                url = url.replace(p, v);
+                                params.delete(n);
+                            }
+                        }
+                    }
+                    queryParams = params.toString();
+                    if (queryParams.length > 0) {
+                        url += '?' + queryParams;
                     }
                     return [4 /*yield*/, fetch(url, (typeof request.config == 'function') ? request.config() : request.config)];
                 case 1:
@@ -153,59 +166,134 @@ export function makeHttpClient(init) {
 }
 var HttpClientImpl = /** @class */ (function () {
     function HttpClientImpl(init) {
-        this.baseURL = init.baseURL;
-        this.defaultParams = init.defaultParams ? init.defaultParams : {};
-        this.defaultConfig = init.defaultConfig ? init.defaultConfig : {};
         this.httpAPIs = init.httpAPIs;
+        this.baseURL = init.baseURL || "";
+        this.defaultParams = init.defaultParams || {};
+        this.defaultConfig = init.defaultConfig || {};
+        this.requestInterceptors = init.requestInterceptors;
+        this.responseInterceptors = init.responseInterceptors;
+        this.errorInterceptors = init.errorInterceptors;
     }
     HttpClientImpl.prototype.fetch = function (api, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var httpAPI, request, mockHandler, data, responseHanlder, error_1, errorHanlder;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var httpAPI, request, _i, _a, interceptor, req, _b, _c, mockHandler, data, error_1, _d, _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
-                        try {
-                            httpAPI = this.httpAPIs[api];
-                            console.log(httpAPI);
-                        }
-                        catch (error) {
+                        httpAPI = this.httpAPIs[api];
+                        if (!httpAPI) {
                             return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
                         }
                         request = {
-                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.request.url),
-                            params: __assign(__assign(__assign({}, ((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams)), ((typeof httpAPI.request.params == 'function') ? httpAPI.request.params() : httpAPI.request.params)), ((typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params)),
-                            config: __assign(__assign(__assign({}, ((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig)), ((typeof httpAPI.request.config == 'function') ? httpAPI.request.config() : httpAPI.request.config)), ((typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config))
+                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.url),
+                            params: merge(merge((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams, (typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params), (typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params),
+                            config: merge(merge((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig, (typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config), (typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config)
                         };
-                        _a.label = 1;
+                        _f.label = 1;
                     case 1:
-                        _a.trys.push([1, 5, , 8]);
-                        // In case of non-production env and mock enabled,
-                        // if a mock handler is defined, skips HTTP request and response
-                        if (process.env.NODE_ENV !== 'production' && process.env.MOCK_DISABLED !== 'true') {
-                            mockHandler = httpAPI['mock'];
-                            if (mockHandler != undefined) {
-                                return [2 /*return*/, mockHandler(request)];
-                            }
-                        }
-                        return [4 /*yield*/, httpRequest(request)];
+                        _f.trys.push([1, 12, , 14]);
+                        if (!this.requestInterceptors) return [3 /*break*/, 7];
+                        _i = 0, _a = this.requestInterceptors;
+                        _f.label = 2;
                     case 2:
-                        data = _a.sent();
-                        responseHanlder = httpAPI['response'];
-                        if (!responseHanlder) return [3 /*break*/, 4];
-                        return [4 /*yield*/, responseHanlder(data, request)];
+                        if (!(_i < _a.length)) return [3 /*break*/, 7];
+                        interceptor = _a[_i];
+                        return [4 /*yield*/, interceptor(request)];
                     case 3:
-                        data = _a.sent();
-                        _a.label = 4;
-                    case 4: return [2 /*return*/, data];
+                        req = _f.sent();
+                        if (!!req) return [3 /*break*/, 5];
+                        _c = (_b = Promise).reject;
+                        return [4 /*yield*/, this.errorProc(httpAPI, request, 'The API \"' + api + '\" request was cancelled.')];
+                    case 4: return [2 /*return*/, _c.apply(_b, [_f.sent()])];
                     case 5:
-                        error_1 = _a.sent();
-                        errorHanlder = httpAPI['error'];
-                        if (!errorHanlder) return [3 /*break*/, 7];
-                        return [4 /*yield*/, errorHanlder(error_1, request)];
+                        request = req;
+                        _f.label = 6;
                     case 6:
-                        _a.sent();
-                        _a.label = 7;
-                    case 7: return [2 /*return*/, Promise.reject(error_1)];
+                        _i++;
+                        return [3 /*break*/, 2];
+                    case 7:
+                        if (!(process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none')) return [3 /*break*/, 9];
+                        mockHandler = httpAPI['mock'];
+                        if (!(mockHandler != undefined)) return [3 /*break*/, 9];
+                        return [4 /*yield*/, this.responseProc(httpAPI, request, mockHandler(request))];
+                    case 8: return [2 /*return*/, _f.sent()];
+                    case 9: return [4 /*yield*/, httpRequest(request)];
+                    case 10:
+                        data = _f.sent();
+                        return [4 /*yield*/, this.responseProc(httpAPI, request, data)];
+                    case 11: return [2 /*return*/, _f.sent()];
+                    case 12:
+                        error_1 = _f.sent();
+                        _e = (_d = Promise).reject;
+                        return [4 /*yield*/, this.errorProc(httpAPI, request, error_1)];
+                    case 13: return [2 /*return*/, _e.apply(_d, [_f.sent()])];
+                    case 14: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    HttpClientImpl.prototype.responseProc = function (api, request, data) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _i, _a, interceptor, respHanlder;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!this.responseInterceptors) return [3 /*break*/, 4];
+                        _i = 0, _a = this.responseInterceptors;
+                        _b.label = 1;
+                    case 1:
+                        if (!(_i < _a.length)) return [3 /*break*/, 4];
+                        interceptor = _a[_i];
+                        return [4 /*yield*/, interceptor(data, request)];
+                    case 2:
+                        data = _b.sent();
+                        _b.label = 3;
+                    case 3:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        respHanlder = api['response'];
+                        if (!respHanlder) return [3 /*break*/, 6];
+                        return [4 /*yield*/, respHanlder(data, request)];
+                    case 5:
+                        data = _b.sent();
+                        _b.label = 6;
+                    case 6: return [2 /*return*/, data];
+                }
+            });
+        });
+    };
+    HttpClientImpl.prototype.errorProc = function (api, request, error) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _i, _a, interceptor, errorHanlder, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 7, , 8]);
+                        if (!this.errorInterceptors) return [3 /*break*/, 4];
+                        _i = 0, _a = this.errorInterceptors;
+                        _c.label = 1;
+                    case 1:
+                        if (!(_i < _a.length)) return [3 /*break*/, 4];
+                        interceptor = _a[_i];
+                        return [4 /*yield*/, interceptor(error, request)];
+                    case 2:
+                        error = _c.sent();
+                        _c.label = 3;
+                    case 3:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        errorHanlder = api['error'];
+                        if (!errorHanlder) return [3 /*break*/, 6];
+                        return [4 /*yield*/, errorHanlder(error, request)];
+                    case 5:
+                        error = _c.sent();
+                        _c.label = 6;
+                    case 6: return [2 /*return*/, error];
+                    case 7:
+                        _b = _c.sent();
+                        return [2 /*return*/, error];
                     case 8: return [2 /*return*/];
                 }
             });
@@ -213,3 +301,17 @@ var HttpClientImpl = /** @class */ (function () {
     };
     return HttpClientImpl;
 }());
+function merge(obj1, obj2) {
+    var key;
+    for (key in obj2) {
+        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
+        // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
+        obj1[key] =
+            obj1[key] &&
+                obj1[key].toString() === "[object Object]" &&
+                (obj2[key] && obj2[key].toString() === "[object Object]")
+                ? merge(obj1[key], obj2[key])
+                : (obj1[key] = obj2[key]);
+    }
+    return obj1;
+}

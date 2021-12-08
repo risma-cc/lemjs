@@ -1,4 +1,3 @@
-import React from 'react';
 import { Model, ModelInit } from '../index';
 
 /*!
@@ -6,26 +5,6 @@ import { Model, ModelInit } from '../index';
  */
 export function makeModel<T>(init: ModelInit<T>): Model<T> {
     return new ModelImpl<T>(init);
-}
-
-/*!
- * useModel: Uses the model similar to React Hooks, and inlinely involves
- *           connection between the update event and React Hooks dispatch.
- */
-export function useModel<T>(model: Model<T>): T {
-    const [state, setState] = React.useState((model as ModelImpl<T>).state);
-    const onUpdated = (state: T) => {
-        setState(state);
-    }
-
-    React.useEffect(() => {
-        model.subscribe(onUpdated);
-        return () => {
-            model.unsubscribe(onUpdated);
-        }
-    }, [state]);
-
-    return state;
 }
 
 class ModelImpl<T> implements Model<T> {
@@ -41,8 +20,8 @@ class ModelImpl<T> implements Model<T> {
         this._eventUpdated = new Set<(state: T) => void>();
     }
 
-    getState() {
-        return { ...this.state };
+    get() {
+        return this.state;
     }
 
     query(action: string, payload?: any): any {
@@ -53,15 +32,14 @@ class ModelImpl<T> implements Model<T> {
         }
     }
 
-    update(action: string, payload?: any): T {
+    update(action: string, payload?: any) {
         try {
             this.state = this._update[action](payload, this.state);
-            this._eventUpdated.forEach(e => {
+            this._eventUpdated.forEach((e) => {
                 e(this.state);
             });
         } catch (error) {
         }
-        return this.state;
     }
 
     subscribe(callback: (state: T) => void) {

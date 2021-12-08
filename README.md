@@ -1,7 +1,7 @@
 # LemJS
-Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数据流共享方案，加入编码风格一致的WebAPI封装，以及对React Hooks支持与扩展，可以作为一个前端应用框架的基础。
+Lem诞生的初衷是构建一个轻量级、低依赖、易上手的前端数据流共享方案，加入编码风格一致的WebAPI封装，可以作为一个前端应用框架的基础。
 
-Lem采用Typescript开发，同时支持在Javascript和Typescritp中使用。核心逻辑代码只使用原生标准库，原则上对各个前端主流框架的支持与整合都是将来可以考虑的。目前，先只加入了对React Hooks的支持。
+Lem采用Typescript开发，同时支持在Javascript和Typescritp中使用。核心逻辑代码只使用原生标准库，原则上对各个前端主流框架的支持与整合都是将来可以考虑的。
 
 Lem会保持自身的单纯性，不会像滚雪球一样越来越臃肿，也不会一味追求新潮而增加了学习成本。希望即使是Javascript和Typescript的初学者，也能在习得它的设计模式与编码风格之后，即可轻松玩转。
 
@@ -28,14 +28,14 @@ https://github.com/risma-cc/lemjs
         /* 查询方法 */
         query: {
             'ab': (payload: any, state: A): any => {
-                return { a: state.a, b: 'B' };
+                return { a: state.a, b: state.answer };
             },
         },
         /* 更新方法 */
         update: {
             'add': (payload: any, state: A): A => {
                 let { x } = payload;
-                return { a: a + x };
+                return { ...state, a: a + x };
             },
             'set': (payload: any, state: A): A => {
                 return { ...state, ...payload };
@@ -47,8 +47,14 @@ https://github.com/risma-cc/lemjs
 #### React函数组件，使用Hooks
 
     export default () => {
-        /* 类Hooks的模型使用方法。 */
-        const state = useModel(myModel);
+        const [ state, setState ] = React.useState(myModel.get());
+
+        useEffect(() => {
+            myModel.subscribe(setState);
+            return () => {
+                myModel.unsubscribe(setState);
+            }
+        }, [ state ]);
 
         return (
             <div>
@@ -97,34 +103,31 @@ https://github.com/risma-cc/lemjs
 
     const myAPIs = {
         'hello': {
+            /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
+            url: '/hello/{you}',
             /*
-             * 接口请求，包括URL路径、URL参数、配置选项。
-             * 备注：在Service、API以及fetch都可以指定接口请求的各个属性，他们会自动合并。
-             * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再API、最后Service。
-             */
-            request: {
-                /* 请求URL路径，如果Service指定了baseURL，这里只需要指定子路由路径。 */
-                url: '/hello',
-                /* 请求URL参数 */
-                params: {
-                   'color': ‘red’
-                },
-                /* 请求配置选项，参考fetch的RequestInit。 */
-                config: {
-                    /* HTTP请求方法，缺省为“GET”。 */
-                    method: ‘POST’,
-                    /*
-                     * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
-                     * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
-                     */
-                    body: FormBody([
-                        {
-                            name: 'avatar',
-                            value: /* 文件Blob/File */,
-                            fileName: 'myavatar.jpg'
-                        }
-                    ])
-                }
+                * 请求URL参数。
+                * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
+                */
+            params: {
+                'you': 'Jack',
+                'color': 'red'
+            },
+            /* 请求配置选项，参考fetch的RequestInit。 */
+            config: {
+                /* HTTP请求方法，缺省为“GET”。 */
+                method: ‘POST’,
+                /*
+                    * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
+                    * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
+                    */
+                body: FormBody([
+                    {
+                        name: 'avatar',
+                        value: /* 文件Blob/File */,
+                        fileName: 'myavatar.jpg'
+                    }
+                ])
             },
             /* 响应处理，data根据Content-Type已转换成string、FormData、JSON对象或者blob。 */
             response: (data: any, request: HttpRequest) => {
@@ -135,11 +138,12 @@ https://github.com/risma-cc/lemjs
                 return { answer: 'Hello ' + name };
             },
             /* 错误处理，包括网络失败、HTTP非200状态等。 */
-            error: (error: Error, request: HttpRequest) => {
+            error: (error: any, request: HttpRequest) => {
+                return error
             },
             /*
              * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
-             * 当环境变量NODE_ENV为"production"或者MOCK_DISABLED为"true"时，mock将被忽略。
+             * 当环境变量NODE_ENV为"production"或者MOCK为"none"时，mock将被忽略。
              */
             mock: (request: HttpRequest) => {
                 return { answer: 'Hello Jack' };
@@ -150,19 +154,53 @@ https://github.com/risma-cc/lemjs
 ### 创建HTTP服务Client
 
     const myClient = makeHttpClient({
+        /* 接口定义 */
+        httpAPIs: myAPIs,
         /* 统一的URL前缀 */
         baseURL: 'http://a.b.c/api',
-        /* 默认URL参数，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
+        /* 默认URL参数。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultParams: () => {
             return { 'ver': myVersion };
         },
-        /* 默认配置选项，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
+        /* 默认配置选项。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
         defaultConfig: { },
-        httpAPIs: myAPIs,
+        /* 请求拦截器 */
+        requestInterceptors: [
+            (request: HttpRequest) => {
+                /* 请求数据处理，可以修改返回的请求数据。如果返回false，则取消请求。 */
+                return request;
+            }
+        ],
+        /* 响应拦截器 */
+        responseInterceptors: [
+            (response: any, request: HttpRequest) => {
+                /* 响应结果处理，可以修改返回的响应数据。 */
+                return response;
+            },
+            (response: any, request: HttpRequest) => {
+                /* 可以抛出异常终止响应处理，转为错误处理。 */
+                throw new Error('I am tired');
+            },
+            async (response: any, request: HttpRequest) => {
+                /* 如果是异步方法，可以返回Promise.reject，转为错误处理 */
+                return Promise.reject('I am sad');
+            },
+        ],
+        /* 错误拦截器 */
+        errorInterceptors: [
+            (error: any, request: HttpRequest) => {
+                /* 错误处理，可以修改返回的错误信息。 */
+                return error;
+            }
+        ],
     });
 
 ### 使用HTTP服务接口
 
+    /*
+     * 接口的URL路径、URL参数、配置选项在HttpAPI以及fetch都可以指定，还有HttpClient中的默认值，他们会自动合并。
+     * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再HttpAPI、最后HttpClient默认值。
+     */
     let result = await myClient.fetch('hello', { params: { 'myname': 'Michael' }});
 
 ### 自定义Service
