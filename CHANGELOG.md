@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## V0.4.0
+## Features
+- HTTP: Decorators for HTTP class and method
+
+### Changed
+- HTTP: APIs is split from HttpClientInit
+
 ## V0.3.1 | 2021-12-08
 ### Fixed
 - Code small

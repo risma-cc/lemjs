@@ -4,7 +4,7 @@ export var LocalStorage;
      * getObject: Read a value in JSON format from local storage.
      */
     function get(key) {
-        var data = localStorage.getItem(key);
+        const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : data;
     }
     LocalStorage.get = get;
@@ -32,7 +32,7 @@ export var SessionStorage;
      * get: Read a value in JSON format from session storage.
      */
     function get(key) {
-        var data = sessionStorage.getItem(key);
+        const data = sessionStorage.getItem(key);
         return data ? JSON.parse(data) : data;
     }
     SessionStorage.get = get;

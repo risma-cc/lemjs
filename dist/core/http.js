@@ -1,62 +1,16 @@
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
+;
 /*!
  * JsonBody: Converts an object to a JSON string
  */
-export function JsonBody(data) {
-    return JSON.stringify(data);
+export function JsonBody(value) {
+    return JSON.stringify(value);
 }
 /*!
  * FormBody: Converts elements to a FormData, e.g. file
  */
 export function FormBody(elements) {
-    var body = new FormData;
-    elements.forEach(function (e) {
+    let body = new FormData;
+    elements.forEach(e => {
         if (typeof e.value == 'string') {
             body.append(e.name, e.value);
         }
@@ -69,249 +23,269 @@ export function FormBody(elements) {
 /*!
  * httpRequest: Send an HTTP request and return a response
  */
-export function httpRequest(request) {
-    return __awaiter(this, void 0, void 0, function () {
-        var url, params, pathParams, _i, pathParams_1, p, n, v, queryParams, resp, contentType, l;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    url = request.url;
-                    params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
-                    pathParams = url.match(/{(\S+)}/g);
-                    if (pathParams) {
-                        for (_i = 0, pathParams_1 = pathParams; _i < pathParams_1.length; _i++) {
-                            p = pathParams_1[_i];
-                            n = p.slice(1, -1);
-                            v = params.get(n);
-                            if (v) {
-                                url = url.replace(p, v);
-                                params.delete(n);
-                            }
-                        }
-                    }
-                    queryParams = params.toString();
-                    if (queryParams.length > 0) {
-                        url += '?' + queryParams;
-                    }
-                    return [4 /*yield*/, fetch(url, (typeof request.config == 'function') ? request.config() : request.config)];
-                case 1:
-                    resp = _a.sent();
-                    if (!(resp.status >= 200 && resp.status < 300)) return [3 /*break*/, 11];
-                    contentType = resp.headers.get('Content-Type');
-                    if (!(contentType != null)) return [3 /*break*/, 9];
-                    if (!(contentType.indexOf('text') > -1)) return [3 /*break*/, 3];
-                    return [4 /*yield*/, resp.text()];
-                case 2: return [2 /*return*/, _a.sent()];
-                case 3:
-                    if (!(contentType.indexOf('form') > -1)) return [3 /*break*/, 5];
-                    return [4 /*yield*/, resp.formData()];
-                case 4: return [2 /*return*/, _a.sent()];
-                case 5:
-                    if (!(contentType.indexOf('json') > -1)) return [3 /*break*/, 7];
-                    return [4 /*yield*/, resp.json()];
-                case 6: return [2 /*return*/, _a.sent()];
-                case 7: return [4 /*yield*/, resp.blob()];
-                case 8: return [2 /*return*/, _a.sent()];
-                case 9: return [4 /*yield*/, resp.text()];
-                case 10: return [2 /*return*/, _a.sent()];
-                case 11:
-                    if (resp.status === 301 || resp.status === 302) { // Redirect
-                        l = resp.headers.get('Location');
-                        window.location.assign(l == null ? '' : l);
-                    }
-                    return [2 /*return*/, Promise.reject(resp.statusText)];
+export async function httpRequest(request) {
+    let url = request.url;
+    const params = new URLSearchParams((typeof request.params == 'function') ? request.params() : request.params);
+    // Process URL path parameters
+    const pathParams = url.match(/{(\S+)}/g);
+    if (pathParams) {
+        for (let p of pathParams) {
+            let n = p.slice(1, -1);
+            let v = params.get(n);
+            if (v) {
+                url = url.replace(p, v);
+                params.delete(n);
             }
-        });
-    });
+        }
+    }
+    // Process URL query parameters
+    const queryParams = params.toString();
+    if (queryParams.length > 0) {
+        url += '?' + queryParams;
+    }
+    const resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
+    // Check HTTP status and parse response
+    if (resp.status >= 200 && resp.status < 300) {
+        const contentType = resp.headers.get('Content-Type');
+        if (contentType != null) {
+            if (contentType.indexOf('text') > -1) {
+                return await resp.text();
+            }
+            if (contentType.indexOf('form') > -1) {
+                return await resp.formData();
+            }
+            if (contentType.indexOf('json') > -1) {
+                return await resp.json();
+            }
+            return await resp.blob();
+        }
+        return await resp.text();
+    }
+    if (resp.status === 301 || resp.status === 302) { // Redirect
+        const l = resp.headers.get('Location');
+        window.location.assign(l == null ? '' : l);
+    }
+    return Promise.reject(resp.statusText);
 }
 /*!
  * httpGet: Send an HTTP GET request and return a response
  */
-export function httpGet(url, params, config) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, httpRequest({
-                        url: url,
-                        params: params,
-                        config: __assign(__assign({}, config), { method: 'GET' }),
-                    })];
-                case 1: return [2 /*return*/, _a.sent()];
-            }
-        });
+export async function httpGet(url, params, config) {
+    return await httpRequest({
+        url: url,
+        params: params,
+        config: { ...config, method: 'GET' },
     });
 }
 /*!
  * httpPost: Send an HTTP POST request and return a response
  */
-export function httpPost(url, params, config) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, httpRequest({
-                        url: url,
-                        params: params,
-                        config: __assign(__assign({}, config), { method: 'POST' }),
-                    })];
-                case 1: return [2 /*return*/, _a.sent()];
-            }
-        });
+export async function httpPost(url, params, config) {
+    return await httpRequest({
+        url: url,
+        params: params,
+        config: { ...config, method: 'POST' },
     });
 }
+/*!
+ * httpPostJson: Send an HTTP POST request with JSON body and return a response
+ */
+export async function httpPostJson(url, params, config) {
+    return await httpRequest({
+        url: url,
+        params: params,
+        config: {
+            ...config,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        },
+    });
+}
+/*!
+ * httpApiRequest: Send an HTTP API request and return a response
+ */
+export async function httpApiRequest(base, api, options) {
+    return __request(base, api, options);
+}
+/*!
+ * httpApi: Method decorator for HTTP API
+ */
+export const httpApi = (base) => {
+    return function (target, propertyKey, descriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api = await method.apply(this, arguments);
+            return httpApiRequest(base || {}, api);
+        };
+    };
+};
+/*!
+ * httpApiGet: Method decorator for HTTP API with GET method
+ */
+export const httpApiGet = (base) => {
+    return function (target, propertyKey, descriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api = await method.apply(this, arguments);
+            return httpApiRequest(base || {}, api, {
+                config: { method: 'GET' }
+            });
+        };
+    };
+};
+/*!
+ * httpApiPost: Method decorator for HTTP API with POST method
+ */
+export const httpApiPost = (base) => {
+    return function (target, propertyKey, descriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api = await method.apply(this, arguments);
+            return httpApiRequest(base || {}, api, {
+                config: { method: 'POST' }
+            });
+        };
+    };
+};
+/*!
+ * httpApiPostJson: Method decorator for HTTP API with POST method and JSON content type
+ */
+export const httpApiPostJson = (base) => {
+    return function (target, propertyKey, descriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api = await method.apply(this, arguments);
+            return httpApiRequest(base || {}, api, {
+                config: {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            });
+        };
+    };
+};
 /*！
  * makeHttpClient: Create an HTTP client.
  */
 export function makeHttpClient(init) {
     return new HttpClientImpl(init);
 }
-var HttpClientImpl = /** @class */ (function () {
-    function HttpClientImpl(init) {
+class HttpClientImpl {
+    httpAPIs;
+    baseURL;
+    defaultParams;
+    defaultConfig;
+    requestInterceptors;
+    responseInterceptors;
+    errorInterceptors;
+    constructor(init) {
         this.httpAPIs = init.httpAPIs;
-        this.baseURL = init.baseURL || "";
-        this.defaultParams = init.defaultParams || {};
-        this.defaultConfig = init.defaultConfig || {};
+        this.baseURL = init.baseURL;
+        this.defaultParams = init.defaultParams;
+        this.defaultConfig = init.defaultConfig;
         this.requestInterceptors = init.requestInterceptors;
         this.responseInterceptors = init.responseInterceptors;
         this.errorInterceptors = init.errorInterceptors;
     }
-    HttpClientImpl.prototype.fetch = function (api, options) {
-        return __awaiter(this, void 0, void 0, function () {
-            var httpAPI, request, _i, _a, interceptor, req, _b, _c, mockHandler, data, error_1, _d, _e;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
-                    case 0:
-                        httpAPI = this.httpAPIs[api];
-                        if (!httpAPI) {
-                            return [2 /*return*/, Promise.reject('The API \"' + api + '\" does NOT exist')];
-                        }
-                        request = {
-                            url: this.baseURL + ((options === null || options === void 0 ? void 0 : options.url) ? options.url : httpAPI.url),
-                            params: merge(merge((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams, (typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params), (typeof (options === null || options === void 0 ? void 0 : options.params) == 'function') ? options === null || options === void 0 ? void 0 : options.params() : options === null || options === void 0 ? void 0 : options.params),
-                            config: merge(merge((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig, (typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config), (typeof (options === null || options === void 0 ? void 0 : options.config) == 'function') ? options === null || options === void 0 ? void 0 : options.config() : options === null || options === void 0 ? void 0 : options.config)
-                        };
-                        _f.label = 1;
-                    case 1:
-                        _f.trys.push([1, 12, , 14]);
-                        if (!this.requestInterceptors) return [3 /*break*/, 7];
-                        _i = 0, _a = this.requestInterceptors;
-                        _f.label = 2;
-                    case 2:
-                        if (!(_i < _a.length)) return [3 /*break*/, 7];
-                        interceptor = _a[_i];
-                        return [4 /*yield*/, interceptor(request)];
-                    case 3:
-                        req = _f.sent();
-                        if (!!req) return [3 /*break*/, 5];
-                        _c = (_b = Promise).reject;
-                        return [4 /*yield*/, this.errorProc(httpAPI, request, 'The API \"' + api + '\" request was cancelled.')];
-                    case 4: return [2 /*return*/, _c.apply(_b, [_f.sent()])];
-                    case 5:
-                        request = req;
-                        _f.label = 6;
-                    case 6:
-                        _i++;
-                        return [3 /*break*/, 2];
-                    case 7:
-                        if (!(process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none')) return [3 /*break*/, 9];
-                        mockHandler = httpAPI['mock'];
-                        if (!(mockHandler != undefined)) return [3 /*break*/, 9];
-                        return [4 /*yield*/, this.responseProc(httpAPI, request, mockHandler(request))];
-                    case 8: return [2 /*return*/, _f.sent()];
-                    case 9: return [4 /*yield*/, httpRequest(request)];
-                    case 10:
-                        data = _f.sent();
-                        return [4 /*yield*/, this.responseProc(httpAPI, request, data)];
-                    case 11: return [2 /*return*/, _f.sent()];
-                    case 12:
-                        error_1 = _f.sent();
-                        _e = (_d = Promise).reject;
-                        return [4 /*yield*/, this.errorProc(httpAPI, request, error_1)];
-                    case 13: return [2 /*return*/, _e.apply(_d, [_f.sent()])];
-                    case 14: return [2 /*return*/];
-                }
-            });
-        });
+    async fetch(api, options) {
+        let httpAPI = this.httpAPIs[api];
+        if (!httpAPI) {
+            return Promise.reject('The API \"' + api + '\" does NOT exist');
+        }
+        return __request(this, httpAPI, options);
+    }
+}
+async function __response(base, api, request, data) {
+    if (base.responseInterceptors) {
+        for (let interceptor of base.responseInterceptors) {
+            data = await interceptor(data, request);
+        }
+    }
+    const respHanlder = api['response'];
+    if (respHanlder) {
+        data = await respHanlder(data, request);
+    }
+    return data;
+}
+async function __error(base, api, request, error) {
+    try {
+        if (base.errorInterceptors) {
+            for (let interceptor of base.errorInterceptors) {
+                error = await interceptor(error, request);
+            }
+        }
+        const errorHanlder = api['error'];
+        if (errorHanlder) {
+            error = await errorHanlder(error, request);
+        }
+        return error;
+    }
+    catch {
+        return error;
+    }
+}
+async function __request(base, api, options) {
+    // Make a request object
+    let request = {
+        url: base.baseURL + (options?.url ? options.url : api.url),
+        params: __merge(__merge((typeof base.defaultParams == 'function') ? base.defaultParams() : base.defaultParams, (typeof api.params == 'function') ? api.params() : api.params), (typeof options?.params == 'function') ? options?.params() : options?.params),
+        config: __merge(__merge((typeof base.defaultConfig == 'function') ? base.defaultConfig() : base.defaultConfig, (typeof api.config == 'function') ? api.config() : api.config), (typeof options?.config == 'function') ? options?.config() : options?.config)
     };
-    HttpClientImpl.prototype.responseProc = function (api, request, data) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _i, _a, interceptor, respHanlder;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!this.responseInterceptors) return [3 /*break*/, 4];
-                        _i = 0, _a = this.responseInterceptors;
-                        _b.label = 1;
-                    case 1:
-                        if (!(_i < _a.length)) return [3 /*break*/, 4];
-                        interceptor = _a[_i];
-                        return [4 /*yield*/, interceptor(data, request)];
-                    case 2:
-                        data = _b.sent();
-                        _b.label = 3;
-                    case 3:
-                        _i++;
-                        return [3 /*break*/, 1];
-                    case 4:
-                        respHanlder = api['response'];
-                        if (!respHanlder) return [3 /*break*/, 6];
-                        return [4 /*yield*/, respHanlder(data, request)];
-                    case 5:
-                        data = _b.sent();
-                        _b.label = 6;
-                    case 6: return [2 /*return*/, data];
+    // let request: HttpRequest = {
+    //     url: base.baseURL + (options?.url ? options.url : api.url),
+    //     params: {
+    //         ...((typeof base.defaultParams == 'function') ? base.defaultParams() : base.defaultParams),
+    //         ...((typeof api.params == 'function') ? api.params() : api.params),
+    //         ...((typeof options?.params == 'function') ? options?.params() : options?.params),
+    //     },
+    //     config: {
+    //         ...((typeof base.defaultConfig == 'function') ? base.defaultConfig() : base.defaultConfig),
+    //         ...((typeof api.config == 'function') ? api.config() : api.config),
+    //         ...((typeof options?.config == 'function') ? options?.config() : options?.config),
+    //     }
+    // };
+    try {
+        if (base.requestInterceptors) {
+            for (let interceptor of base.requestInterceptors) {
+                const req = await interceptor(request);
+                if (!req) {
+                    return Promise.reject(await __error(base, api, request, 'The API \"' + api + '\" request was cancelled.'));
                 }
-            });
-        });
-    };
-    HttpClientImpl.prototype.errorProc = function (api, request, error) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _i, _a, interceptor, errorHanlder, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _c.trys.push([0, 7, , 8]);
-                        if (!this.errorInterceptors) return [3 /*break*/, 4];
-                        _i = 0, _a = this.errorInterceptors;
-                        _c.label = 1;
-                    case 1:
-                        if (!(_i < _a.length)) return [3 /*break*/, 4];
-                        interceptor = _a[_i];
-                        return [4 /*yield*/, interceptor(error, request)];
-                    case 2:
-                        error = _c.sent();
-                        _c.label = 3;
-                    case 3:
-                        _i++;
-                        return [3 /*break*/, 1];
-                    case 4:
-                        errorHanlder = api['error'];
-                        if (!errorHanlder) return [3 /*break*/, 6];
-                        return [4 /*yield*/, errorHanlder(error, request)];
-                    case 5:
-                        error = _c.sent();
-                        _c.label = 6;
-                    case 6: return [2 /*return*/, error];
-                    case 7:
-                        _b = _c.sent();
-                        return [2 /*return*/, error];
-                    case 8: return [2 /*return*/];
-                }
-            });
-        });
-    };
-    return HttpClientImpl;
-}());
-function merge(obj1, obj2) {
-    var key;
+                request = req;
+            }
+        }
+        // In case of non-production env and mock enabled,
+        // if a mock handler is defined, skips HTTP request.
+        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+            const mockHandler = api['mock'];
+            if (mockHandler != undefined) {
+                return await __response(base, api, request, mockHandler(request));
+            }
+        }
+        let data = await httpRequest(request);
+        return await __response(base, api, request, data);
+    }
+    catch (error) {
+        return Promise.reject(await __error(base, api, request, error));
+    }
+}
+function __merge(obj1, obj2) {
+    if (!obj1) {
+        return obj2;
+    }
+    if (!obj2) {
+        return obj1;
+    }
+    let key;
     for (key in obj2) {
-        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
+        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，
+        // 否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
         // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
-        obj1[key] =
-            obj1[key] &&
-                obj1[key].toString() === "[object Object]" &&
-                (obj2[key] && obj2[key].toString() === "[object Object]")
-                ? merge(obj1[key], obj2[key])
-                : (obj1[key] = obj2[key]);
+        obj1[key] = obj1[key] &&
+            obj1[key].toString() === "[object Object]" &&
+            (obj2[key] && obj2[key].toString() === "[object Object]")
+            ? __merge(obj1[key], obj2[key])
+            : (obj1[key] = obj2[key]);
     }
     return obj1;
 }

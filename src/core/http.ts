@@ -1,24 +1,100 @@
-import {
-    FormElement,
-    HttpRequest,
-    HttpAPI,
-    HttpClient,
-    HttpClientInit,
-    HttpConfig,
-    HttpParams,
-    HttpRequestOptions,
-    RequestHandler,
-    ResponseHandler,
-    ErrorHandler,
-    ResponseAsyncHandler,
-    ErrorAsyncHandler,
-} from '../index';
+/*!
+ * HttpParams: Similar to URLSearchParams.
+ */
+export type HttpParams = { [x: string]: string };
+
+/*!
+ * HttpConfig: Configuration options of HTTP request.
+ */
+export type HttpConfig = RequestInit;
+
+/*!
+ * FormElement: Element in form data
+ */
+export interface FormElement {
+    name: string,
+    value: string | Blob,
+    fileName?: string,
+}
+
+/*!
+ * HttpRequest: HTTP rquest with a required url property.
+ */
+export interface HttpRequest {
+    url: string,
+    params?: HttpParams | (() => HttpParams),
+    config?: HttpConfig | (() => HttpConfig),
+}
+
+/*!
+ * HttpRequestOptions: HTTP request with all optional properties.
+ */
+export interface HttpRequestOptions {
+    url?: string,
+    params?: HttpParams | (() => HttpParams),
+    config?: HttpConfig | (() => HttpConfig),
+};
+
+export type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
+export type ResponseHandler = (response: any, request: HttpRequest) => any;
+export type ResponseAsyncHandler = (response: any, request: HttpRequest) => Promise<any>;
+export type ErrorHandler = (error: Error, request: HttpRequest) => any;
+export type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
+
+/*!
+ * HttpAPI: Definition of HTTP API.
+ */
+export interface HttpAPI extends HttpRequest {
+    /*!
+     * response: Process response data and return them.
+     */
+    response?: ResponseHandler,
+
+    /*!
+     * error: Handles error.
+     */
+    error?: ErrorHandler,
+
+    /*!
+     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
+     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
+     */
+    mock?: (request: HttpRequest) => any,
+}
+
+/*!
+ * HttpClientInit: Definition of an HTTP APIs client for initialization.
+ */
+export interface HttpClientInit {
+    baseURL?: string,
+    defaultParams?: HttpParams | (() => HttpParams),
+    defaultConfig?: HttpConfig | (() => HttpConfig),
+    requestInterceptors?: RequestHandler[],
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[],
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[],
+}
+
+/*!
+ * HttpClient: The client for providing encapsulated HTTP APIs.
+ */
+export interface HttpClient extends HttpClientInit {
+    httpAPIs: { [x: string]: HttpAPI },
+
+    /*!
+     * fetch: Asynchronous handler of the API request and response.
+     * Request:
+     *   URL: Join the base URL and a sub-path (fetch options‘ url has priority over HttpAPI's)
+     *   Params: Combination of options' params, API's and client's default
+     *   Config: Combination of options' config, API's and client's default 
+     */
+    fetch: (api: string, options?: HttpRequestOptions) => Promise<any>,
+}
 
 /*!
  * JsonBody: Converts an object to a JSON string
  */
-export function JsonBody(data: object): string {
-    return JSON.stringify(data);
+export function JsonBody(value: any): string {
+    return JSON.stringify(value);
 }
 
 /*!
@@ -107,27 +183,101 @@ export async function httpPost(url: string, params?: HttpParams, config?: HttpCo
     });
 }
 
+/*!
+ * httpPostJson: Send an HTTP POST request with JSON body and return a response
+ */
+export async function httpPostJson(url: string, params?: HttpParams, config?: HttpConfig) {
+    return await httpRequest({
+        url: url,
+        params: params,
+        config: {
+            ...config,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        },
+    });
+}
+
+/*!
+ * httpApi: Class decorator for HTTP client
+ */
+export function httpClient(init: HttpClientInit) {
+    return function <T extends {new(...args:any[]):{}}>(constructor: T) {
+        return class extends constructor {
+            static init = init;
+        }
+    }
+}
+
+/*!
+ * httpApiGet: Method decorator for HTTP API with GET method
+ */
+export function httpApiGet() {
+    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api: HttpAPI = await method.apply(this, arguments);
+            return __request((this as (PropertyDescriptor & { init: HttpClientInit })).init || {}, api, {
+                config: { method: 'GET' }
+            });
+        }
+    }
+}
+
+/*!
+ * httpApiPost: Method decorator for HTTP API with POST method
+ */
+export function httpApiPost() {
+    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api: HttpAPI = await method.apply(this, arguments);
+            return __request((this as (PropertyDescriptor & { init: HttpClientInit})).init || {}, api, {
+                config: { method: 'POST' }
+            });
+        }
+    }
+}
+
+/*!
+ * httpApiPostJson: Method decorator for HTTP API with POST method and JSON content type
+ */
+export function httpApiPostJson() {
+    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        let method = descriptor.value;
+        descriptor.value = async function () {
+            let api: HttpAPI = await method.apply(this, arguments);
+            return __request((this as (PropertyDescriptor & { init: HttpClientInit})).init || {}, api, {
+                config: {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            });
+        }
+    }
+}
+
 /*！
  * makeHttpClient: Create an HTTP client.
  */
-export function makeHttpClient(init: HttpClientInit): HttpClient {
-    return new HttpClientImpl(init);
+export function makeHttpClient(init: HttpClientInit, apis: { [x: string]: HttpAPI }): HttpClient {
+    return new HttpClientImpl(init, apis);
 }
 
 class HttpClientImpl implements HttpClient {
     httpAPIs: { [x: string]: HttpAPI };
-    baseURL: string;
-    defaultParams: HttpParams | (() => HttpParams);
-    defaultConfig: HttpConfig | (() => HttpConfig);
+    baseURL?: string;
+    defaultParams?: HttpParams | (() => HttpParams);
+    defaultConfig?: HttpConfig | (() => HttpConfig);
     requestInterceptors?: RequestHandler[];
     responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
     errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
 
-    constructor(init: HttpClientInit) {
-        this.httpAPIs = init.httpAPIs;
-        this.baseURL = init.baseURL || "";
-        this.defaultParams = init.defaultParams || {};
-        this.defaultConfig = init.defaultConfig || {};
+    constructor(init: HttpClientInit, apis: { [x: string]: HttpAPI }) {
+        this.httpAPIs = apis;
+        this.baseURL = init.baseURL;
+        this.defaultParams = init.defaultParams;
+        this.defaultConfig = init.defaultConfig;
         this.requestInterceptors = init.requestInterceptors;
         this.responseInterceptors = init.responseInterceptors;
         this.errorInterceptors = init.errorInterceptors;
@@ -138,102 +288,110 @@ class HttpClientImpl implements HttpClient {
         if (!httpAPI) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
-
-        // Make a request object
-        let request: HttpRequest = {
-            url: this.baseURL + (options?.url ? options.url : httpAPI.url),
-            params: merge(merge(
-                (typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
-                (typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params
-            ), (typeof options?.params == 'function') ? options?.params() : options?.params),
-            config: merge(merge(
-                (typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
-                (typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config
-            ), (typeof options?.config == 'function') ? options?.config() : options?.config)
-        };
-        // let request: HttpRequest = {
-        //     url: this.baseURL + (options?.url ? options.url : httpAPI.url),
-        //     params: {
-        //         ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
-        //         ...((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params),
-        //         ...((typeof options?.params == 'function') ? options?.params() : options?.params),
-        //     },
-        //     config: {
-        //         ...((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig),
-        //         ...((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config),
-        //         ...((typeof options?.config == 'function') ? options?.config() : options?.config),
-        //     }
-        // };
-
-        try {
-            if (this.requestInterceptors) {
-                for (let interceptor of this.requestInterceptors) {
-                    const req = await interceptor(request);
-                    if (!req) {
-                        return Promise.reject(await this.errorProc(httpAPI, request, 'The API \"' + api + '\" request was cancelled.'));
-                    }
-                    request = req;
-                }
-            }
-
-            // In case of non-production env and mock enabled,
-            // if a mock handler is defined, skips HTTP request.
-            if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-                const mockHandler = httpAPI['mock'];
-                if (mockHandler != undefined) {
-                    return await this.responseProc(httpAPI, request, mockHandler(request));
-                }
-            }
-            let data = await httpRequest(request);
-            return await this.responseProc(httpAPI, request, data);
-        } catch (error) {
-            return Promise.reject(await this.errorProc(httpAPI, request, error));
-        }
-    }
-
-    private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
-        if (this.responseInterceptors) {
-            for (let interceptor of this.responseInterceptors) {
-                data = await interceptor(data, request);
-            }
-        }
-        const respHanlder = api['response'];
-        if (respHanlder) {
-            data = await respHanlder(data, request);
-        }
-        return data;
-    }
-
-    private async errorProc(api: HttpAPI, request: HttpRequest, error: any) {
-        try {
-            if (this.errorInterceptors) {
-                for (let interceptor of this.errorInterceptors) {
-                    error = await interceptor(error, request);
-                }
-            }
-            const errorHanlder = api['error'];
-            if (errorHanlder) {
-                error = await errorHanlder(error, request);
-            }
-            return error;
-        } catch {
-            return error;
-        }
+        return __request(this, httpAPI, options)
     }
 }
 
-function merge(obj1: any, obj2: any) {
+async function __response(init: HttpClientInit, api: HttpAPI, request: HttpRequest, data: any) {
+    if (init.responseInterceptors) {
+        for (let interceptor of init.responseInterceptors) {
+            data = await interceptor(data, request);
+        }
+    }
+    const respHanlder = api['response'];
+    if (respHanlder) {
+        data = await respHanlder(data, request);
+    }
+    return data;
+}
+
+async function __error(init: HttpClientInit, api: HttpAPI, request: HttpRequest, error: any) {
+    try {
+        if (init.errorInterceptors) {
+            for (let interceptor of init.errorInterceptors) {
+                error = await interceptor(error, request);
+            }
+        }
+        const errorHanlder = api['error'];
+        if (errorHanlder) {
+            error = await errorHanlder(error, request);
+        }
+        return error;
+    } catch {
+        return error;
+    }
+}
+
+async function __request(init: HttpClientInit, api: HttpAPI, options?: HttpRequestOptions) {
+    // Make a request object
+    let request: HttpRequest = {
+        url: init.baseURL + (options?.url ? options.url : api.url),
+        params: __merge(__merge(
+            (typeof init.defaultParams == 'function') ? init.defaultParams() : init.defaultParams,
+            (typeof api.params == 'function') ? api.params() : api.params
+        ), (typeof options?.params == 'function') ? options?.params() : options?.params),
+        config: __merge(__merge(
+            (typeof init.defaultConfig == 'function') ? init.defaultConfig() : init.defaultConfig,
+            (typeof api.config == 'function') ? api.config() : api.config
+        ), (typeof options?.config == 'function') ? options?.config() : options?.config)
+    };
+    // let request: HttpRequest = {
+    //     url: base.baseURL + (options?.url ? options.url : api.url),
+    //     params: {
+    //         ...((typeof base.defaultParams == 'function') ? base.defaultParams() : base.defaultParams),
+    //         ...((typeof api.params == 'function') ? api.params() : api.params),
+    //         ...((typeof options?.params == 'function') ? options?.params() : options?.params),
+    //     },
+    //     config: {
+    //         ...((typeof base.defaultConfig == 'function') ? base.defaultConfig() : base.defaultConfig),
+    //         ...((typeof api.config == 'function') ? api.config() : api.config),
+    //         ...((typeof options?.config == 'function') ? options?.config() : options?.config),
+    //     }
+    // };
+
+    try {
+        if (init.requestInterceptors) {
+            for (let interceptor of init.requestInterceptors) {
+                const req = await interceptor(request);
+                if (!req) {
+                    return Promise.reject(await __error(init, api, request, 'The API \"' + api + '\" request was cancelled.'));
+                }
+                request = req;
+            }
+        }
+
+        // In case of non-production env and mock enabled,
+        // if a mock handler is defined, skips HTTP request.
+        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+            const mockHandler = api['mock'];
+            if (mockHandler != undefined) {
+                return await __response(init, api, request, mockHandler(request));
+            }
+        }
+        let data = await httpRequest(request);
+        return await __response(init, api, request, data);
+    } catch (error) {
+        return Promise.reject(await __error(init, api, request, error));
+    }
+}
+
+function __merge(obj1: any, obj2: any) {
+    if (!obj1) {
+        return obj2;
+    }
+    if (!obj2) {
+        return obj1;
+    }
     let key;
     for (key in obj2) {
         // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，
         // 否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
         // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
-        obj1[key] =
-            obj1[key] &&
-                obj1[key].toString() === "[object Object]" &&
-                (obj2[key] && obj2[key].toString() === "[object Object]")
-                ? merge(obj1[key], obj2[key])
-                : (obj1[key] = obj2[key]);
+        obj1[key] = obj1[key] &&
+            obj1[key].toString() === "[object Object]" &&
+            (obj2[key] && obj2[key].toString() === "[object Object]")
+            ? __merge(obj1[key], obj2[key])
+            : (obj1[key] = obj2[key]);
     }
     return obj1;
 }

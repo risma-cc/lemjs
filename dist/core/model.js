@@ -4,40 +4,42 @@
 export function makeModel(init) {
     return new ModelImpl(init);
 }
-var ModelImpl = /** @class */ (function () {
-    function ModelImpl(init) {
+class ModelImpl {
+    state;
+    _query;
+    _update;
+    _eventUpdated;
+    constructor(init) {
         this.state = init.state;
         this._query = init.query;
         this._update = init.update;
         this._eventUpdated = new Set();
     }
-    ModelImpl.prototype.get = function () {
+    get() {
         return this.state;
-    };
-    ModelImpl.prototype.query = function (action, payload) {
+    }
+    query(action, payload) {
         try {
             return this._query[action](payload, this.state);
         }
         catch (error) {
             return null;
         }
-    };
-    ModelImpl.prototype.update = function (action, payload) {
-        var _this = this;
+    }
+    update(action, payload) {
         try {
             this.state = this._update[action](payload, this.state);
-            this._eventUpdated.forEach(function (e) {
-                e(_this.state);
+            this._eventUpdated.forEach((e) => {
+                e(this.state);
             });
         }
         catch (error) {
         }
-    };
-    ModelImpl.prototype.subscribe = function (callback) {
+    }
+    subscribe(callback) {
         this._eventUpdated.add(callback);
-    };
-    ModelImpl.prototype.unsubscribe = function (callback) {
+    }
+    unsubscribe(callback) {
         this._eventUpdated.delete(callback);
-    };
-    return ModelImpl;
-}());
+    }
+}
