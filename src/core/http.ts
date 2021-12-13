@@ -222,9 +222,9 @@ export function httpClientGet(url: string) {
                 ...{ url: url },
                 ...await method.apply(this, arguments)
             };
-            return __request((this as IHttpClient).init || {}, api, {
+            return __request(api, {
                 config: { method: 'GET' }
-            });
+            }, (this as IHttpClient).init);
         }
     }
 }
@@ -240,9 +240,9 @@ export function httpClientiPost(url: string) {
                 ...{ url: url },
                 ...await method.apply(this, arguments)
             };
-            return __request((this as IHttpClient).init || {}, api, {
+            return __request(api, {
                 config: { method: 'POST' }
-            });
+            }, (this as IHttpClient).init);
         }
     }
 }
@@ -258,12 +258,12 @@ export function httpClientPostJson(url: string) {
                 ...{ url: url },
                 ...await method.apply(this, arguments)
             };
-            return __request((this as IHttpClient).init || {}, api, {
+            return __request(api, {
                 config: {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 }
-            });
+            }, (this as IHttpClient).init);
         }
     }
 }
@@ -299,11 +299,11 @@ class HttpClientImpl implements HttpClient {
         if (!httpAPI) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
-        return __request(this, httpAPI, options)
+        return __request(httpAPI, options, this)
     }
 }
 
-async function __response(init: HttpClientInit, api: HttpAPI, request: HttpRequest, data: any) {
+async function __response(api: HttpAPI, request: HttpRequest, data: any, init?: HttpClientInit) {
     if (init?.responseInterceptors) {
         for (let interceptor of init.responseInterceptors) {
             data = await interceptor(data, request);
@@ -316,7 +316,7 @@ async function __response(init: HttpClientInit, api: HttpAPI, request: HttpReque
     return data;
 }
 
-async function __error(init: HttpClientInit, api: HttpAPI, request: HttpRequest, error: any) {
+async function __error(api: HttpAPI, request: HttpRequest, error: any, init?: HttpClientInit) {
     try {
         if (init?.errorInterceptors) {
             for (let interceptor of init.errorInterceptors) {
@@ -333,7 +333,7 @@ async function __error(init: HttpClientInit, api: HttpAPI, request: HttpRequest,
     }
 }
 
-async function __request(init: HttpClientInit, api: HttpAPI, options?: HttpRequestOptions) {
+async function __request(api: HttpAPI, options?: HttpRequestOptions, init?: HttpClientInit) {
     // Make a request object
     let request: HttpRequest = {
         url: init?.baseURL + (options?.url ? options.url : api.url),
@@ -365,7 +365,7 @@ async function __request(init: HttpClientInit, api: HttpAPI, options?: HttpReque
             for (let interceptor of init.requestInterceptors) {
                 const req = await interceptor(request);
                 if (!req) {
-                    return Promise.reject(await __error(init, api, request, 'The API \"' + api + '\" request was cancelled.'));
+                    return Promise.reject(await __error(api, request, 'The API \"' + api + '\" request was cancelled.', init));
                 }
                 request = req;
             }
@@ -376,13 +376,13 @@ async function __request(init: HttpClientInit, api: HttpAPI, options?: HttpReque
         if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
             const mockHandler = api['mock'];
             if (mockHandler != undefined) {
-                return await __response(init, api, request, mockHandler(request));
+                return await __response(api, request, mockHandler(request), init);
             }
         }
         let data = await httpRequest(request);
-        return await __response(init, api, request, data);
+        return await __response(api, request, data, init);
     } catch (error) {
-        return Promise.reject(await __error(init, api, request, error));
+        return Promise.reject(await __error(api, request, error, init));
     }
 }
 

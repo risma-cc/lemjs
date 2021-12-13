@@ -106,11 +106,9 @@ export async function httpPostJson(url, params, config) {
  */
 export function httpClient(init) {
     return function (constructor) {
-        var _a;
-        return _a = class extends constructor {
-            },
-            _a.init = init,
-            _a;
+        return class extends constructor {
+            static init = init;
+        };
     };
 }
 /*!
@@ -124,9 +122,9 @@ export function httpClientGet(url) {
                 ...{ url: url },
                 ...await method.apply(this, arguments)
             };
-            return __request(this.init || {}, api, {
+            return __request(api, {
                 config: { method: 'GET' }
-            });
+            }, this.init);
         };
     };
 }
@@ -141,9 +139,9 @@ export function httpClientiPost(url) {
                 ...{ url: url },
                 ...await method.apply(this, arguments)
             };
-            return __request(this.init || {}, api, {
+            return __request(api, {
                 config: { method: 'POST' }
-            });
+            }, this.init);
         };
     };
 }
@@ -158,12 +156,12 @@ export function httpClientPostJson(url) {
                 ...{ url: url },
                 ...await method.apply(this, arguments)
             };
-            return __request(this.init || {}, api, {
+            return __request(api, {
                 config: {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 }
-            });
+            }, this.init);
         };
     };
 }
@@ -174,6 +172,13 @@ export function makeHttpClient(init, apis) {
     return new HttpClientImpl(init, apis);
 }
 class HttpClientImpl {
+    httpAPIs;
+    baseURL;
+    defaultParams;
+    defaultConfig;
+    requestInterceptors;
+    responseInterceptors;
+    errorInterceptors;
     constructor(init, apis) {
         this.httpAPIs = apis;
         this.baseURL = init.baseURL;
@@ -188,10 +193,10 @@ class HttpClientImpl {
         if (!httpAPI) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
-        return __request(this, httpAPI, options);
+        return __request(httpAPI, options, this);
     }
 }
-async function __response(init, api, request, data) {
+async function __response(api, request, data, init) {
     if (init?.responseInterceptors) {
         for (let interceptor of init.responseInterceptors) {
             data = await interceptor(data, request);
@@ -203,7 +208,7 @@ async function __response(init, api, request, data) {
     }
     return data;
 }
-async function __error(init, api, request, error) {
+async function __error(api, request, error, init) {
     try {
         if (init?.errorInterceptors) {
             for (let interceptor of init.errorInterceptors) {
@@ -220,7 +225,7 @@ async function __error(init, api, request, error) {
         return error;
     }
 }
-async function __request(init, api, options) {
+async function __request(api, options, init) {
     // Make a request object
     let request = {
         url: init?.baseURL + (options?.url ? options.url : api.url),
@@ -245,7 +250,7 @@ async function __request(init, api, options) {
             for (let interceptor of init.requestInterceptors) {
                 const req = await interceptor(request);
                 if (!req) {
-                    return Promise.reject(await __error(init, api, request, 'The API \"' + api + '\" request was cancelled.'));
+                    return Promise.reject(await __error(api, request, 'The API \"' + api + '\" request was cancelled.', init));
                 }
                 request = req;
             }
@@ -255,14 +260,14 @@ async function __request(init, api, options) {
         if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
             const mockHandler = api['mock'];
             if (mockHandler != undefined) {
-                return await __response(init, api, request, mockHandler(request));
+                return await __response(api, request, mockHandler(request), init);
             }
         }
         let data = await httpRequest(request);
-        return await __response(init, api, request, data);
+        return await __response(api, request, data, init);
     }
     catch (error) {
-        return Promise.reject(await __error(init, api, request, error));
+        return Promise.reject(await __error(api, request, error, init));
     }
 }
 function __merge(obj1, obj2) {

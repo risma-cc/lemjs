@@ -5,6 +5,10 @@ export function makeModel(init) {
     return new ModelImpl(init);
 }
 class ModelImpl {
+    state;
+    _query;
+    _update;
+    _eventUpdated;
     constructor(init) {
         this.state = init.state;
         this._query = init.query;
