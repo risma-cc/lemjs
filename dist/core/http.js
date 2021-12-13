@@ -131,7 +131,7 @@ export function httpClientGet(url) {
 /*!
  * httpClientPost: Method decorator for HTTP API with POST method
  */
-export function httpClientiPost(url) {
+export function httpClientPost(url) {
     return function (target, propertyKey, descriptor) {
         let method = descriptor.value;
         descriptor.value = async function () {

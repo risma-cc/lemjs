@@ -232,7 +232,7 @@ export function httpClientGet(url: string) {
 /*!
  * httpClientPost: Method decorator for HTTP API with POST method
  */
-export function httpClientiPost(url: string) {
+export function httpClientPost(url: string) {
     return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
         let method = descriptor.value;
         descriptor.value = async function () {

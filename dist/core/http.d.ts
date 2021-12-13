@@ -120,7 +120,7 @@ export declare function httpClientGet(url: string): (target: any, propertyKey: s
 /*!
  * httpClientPost: Method decorator for HTTP API with POST method
  */
-export declare function httpClientiPost(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export declare function httpClientPost(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 /*!
  * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
  */
