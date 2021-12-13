@@ -56,9 +56,9 @@ export interface HttpAPI extends HttpRequest {
     mock?: (request: HttpRequest) => any;
 }
 /*!
- * HttpClientInit: Definition of an HTTP base.
+ * HttpClientInit: Definition of an HTTP APIs client for initialization.
  */
-export interface HttpBase {
+export interface HttpClientInit {
     baseURL?: string;
     defaultParams?: HttpParams | (() => HttpParams);
     defaultConfig?: HttpConfig | (() => HttpConfig);
@@ -67,17 +67,12 @@ export interface HttpBase {
     errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
 }
 /*!
- * HttpClientInit: Definition of an HTTP APIs client for initialization.
- */
-export interface HttpClientInit extends HttpBase {
-    httpAPIs: {
-        [x: string]: HttpAPI;
-    };
-}
-/*!
  * HttpClient: The client for providing encapsulated HTTP APIs.
  */
 export interface HttpClient extends HttpClientInit {
+    httpAPIs: {
+        [x: string]: HttpAPI;
+    };
     /*!
      * fetch: Asynchronous handler of the API request and response.
      * Request:
@@ -112,23 +107,24 @@ export declare function httpPost(url: string, params?: HttpParams, config?: Http
  */
 export declare function httpPostJson(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
 /*!
- * httpApiRequest: Send an HTTP API request and return a response
+ * httpClient: Class decorator for HTTP client
  */
-export declare function httpApiRequest(base: HttpBase, api: HttpAPI, options?: HttpRequestOptions): Promise<any>;
+export declare function httpClient(init: HttpClientInit): <T extends new (...args: any[]) => {}>(constructor: T) => {
+    new (...args: any[]): {};
+    init: HttpClientInit;
+} & T;
 /*!
- * httpApi: Method decorator for HTTP API
+ * httpClientGet: Method decorator for HTTP API with GET method
  */
-export declare const httpApi: (base?: HttpBase | undefined) => (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export declare function httpClientGet(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 /*!
- * httpApiGet: Method decorator for HTTP API with GET method
+ * httpClientPost: Method decorator for HTTP API with POST method
  */
-export declare const httpApiGet: (base?: HttpBase | undefined) => (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export declare function httpClientiPost(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 /*!
- * httpApiPost: Method decorator for HTTP API with POST method
+ * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
  */
-export declare const httpApiPost: (base?: HttpBase | undefined) => (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-/*!
- * httpApiPostJson: Method decorator for HTTP API with POST method and JSON content type
- */
-export declare const httpApiPostJson: (base?: HttpBase | undefined) => (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-export declare function makeHttpClient(init: HttpClientInit): HttpClient;
+export declare function httpClientPostJson(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+export declare function makeHttpClient(init: HttpClientInit, apis: {
+    [x: string]: HttpAPI;
+}): HttpClient;

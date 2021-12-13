@@ -102,60 +102,63 @@ export async function httpPostJson(url, params, config) {
     });
 }
 /*!
- * httpApiRequest: Send an HTTP API request and return a response
+ * httpClient: Class decorator for HTTP client
  */
-export async function httpApiRequest(base, api, options) {
-    return __request(base, api, options);
+export function httpClient(init) {
+    return function (constructor) {
+        var _a;
+        return _a = class extends constructor {
+            },
+            _a.init = init,
+            _a;
+    };
 }
 /*!
- * httpApi: Method decorator for HTTP API
+ * httpClientGet: Method decorator for HTTP API with GET method
  */
-export const httpApi = (base) => {
+export function httpClientGet(url) {
     return function (target, propertyKey, descriptor) {
         let method = descriptor.value;
         descriptor.value = async function () {
-            let api = await method.apply(this, arguments);
-            return httpApiRequest(base || {}, api);
-        };
-    };
-};
-/*!
- * httpApiGet: Method decorator for HTTP API with GET method
- */
-export const httpApiGet = (base) => {
-    return function (target, propertyKey, descriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api = await method.apply(this, arguments);
-            return httpApiRequest(base || {}, api, {
+            let api = {
+                ...{ url: url },
+                ...await method.apply(this, arguments)
+            };
+            return __request(this.init || {}, api, {
                 config: { method: 'GET' }
             });
         };
     };
-};
+}
 /*!
- * httpApiPost: Method decorator for HTTP API with POST method
+ * httpClientPost: Method decorator for HTTP API with POST method
  */
-export const httpApiPost = (base) => {
+export function httpClientiPost(url) {
     return function (target, propertyKey, descriptor) {
         let method = descriptor.value;
         descriptor.value = async function () {
-            let api = await method.apply(this, arguments);
-            return httpApiRequest(base || {}, api, {
+            let api = {
+                ...{ url: url },
+                ...await method.apply(this, arguments)
+            };
+            return __request(this.init || {}, api, {
                 config: { method: 'POST' }
             });
         };
     };
-};
+}
 /*!
- * httpApiPostJson: Method decorator for HTTP API with POST method and JSON content type
+ * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
  */
-export const httpApiPostJson = (base) => {
+export function httpClientPostJson(url) {
     return function (target, propertyKey, descriptor) {
         let method = descriptor.value;
         descriptor.value = async function () {
-            let api = await method.apply(this, arguments);
-            return httpApiRequest(base || {}, api, {
+            let api = {
+                ...{ url: url },
+                ...await method.apply(this, arguments)
+            };
+            return __request(this.init || {}, api, {
                 config: {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
@@ -163,23 +166,16 @@ export const httpApiPostJson = (base) => {
             });
         };
     };
-};
+}
 /*！
  * makeHttpClient: Create an HTTP client.
  */
-export function makeHttpClient(init) {
-    return new HttpClientImpl(init);
+export function makeHttpClient(init, apis) {
+    return new HttpClientImpl(init, apis);
 }
 class HttpClientImpl {
-    httpAPIs;
-    baseURL;
-    defaultParams;
-    defaultConfig;
-    requestInterceptors;
-    responseInterceptors;
-    errorInterceptors;
-    constructor(init) {
-        this.httpAPIs = init.httpAPIs;
+    constructor(init, apis) {
+        this.httpAPIs = apis;
         this.baseURL = init.baseURL;
         this.defaultParams = init.defaultParams;
         this.defaultConfig = init.defaultConfig;
@@ -195,9 +191,9 @@ class HttpClientImpl {
         return __request(this, httpAPI, options);
     }
 }
-async function __response(base, api, request, data) {
-    if (base.responseInterceptors) {
-        for (let interceptor of base.responseInterceptors) {
+async function __response(init, api, request, data) {
+    if (init?.responseInterceptors) {
+        for (let interceptor of init.responseInterceptors) {
             data = await interceptor(data, request);
         }
     }
@@ -207,10 +203,10 @@ async function __response(base, api, request, data) {
     }
     return data;
 }
-async function __error(base, api, request, error) {
+async function __error(init, api, request, error) {
     try {
-        if (base.errorInterceptors) {
-            for (let interceptor of base.errorInterceptors) {
+        if (init?.errorInterceptors) {
+            for (let interceptor of init.errorInterceptors) {
                 error = await interceptor(error, request);
             }
         }
@@ -224,32 +220,32 @@ async function __error(base, api, request, error) {
         return error;
     }
 }
-async function __request(base, api, options) {
+async function __request(init, api, options) {
     // Make a request object
     let request = {
-        url: base.baseURL + (options?.url ? options.url : api.url),
-        params: __merge(__merge((typeof base.defaultParams == 'function') ? base.defaultParams() : base.defaultParams, (typeof api.params == 'function') ? api.params() : api.params), (typeof options?.params == 'function') ? options?.params() : options?.params),
-        config: __merge(__merge((typeof base.defaultConfig == 'function') ? base.defaultConfig() : base.defaultConfig, (typeof api.config == 'function') ? api.config() : api.config), (typeof options?.config == 'function') ? options?.config() : options?.config)
+        url: init?.baseURL + (options?.url ? options.url : api.url),
+        params: __merge(__merge((typeof init?.defaultParams == 'function') ? init.defaultParams() : init?.defaultParams, (typeof api.params == 'function') ? api.params() : api.params), (typeof options?.params == 'function') ? options.params() : options?.params),
+        config: __merge(__merge((typeof init?.defaultConfig == 'function') ? init.defaultConfig() : init?.defaultConfig, (typeof api.config == 'function') ? api.config() : api.config), (typeof options?.config == 'function') ? options.config() : options?.config)
     };
     // let request: HttpRequest = {
-    //     url: base.baseURL + (options?.url ? options.url : api.url),
+    //     url: init?.baseURL + (options?.url ? options.url : api.url),
     //     params: {
-    //         ...((typeof base.defaultParams == 'function') ? base.defaultParams() : base.defaultParams),
+    //         ...((typeof init?.defaultParams == 'function') ? init.defaultParams() : init?.defaultParams),
     //         ...((typeof api.params == 'function') ? api.params() : api.params),
-    //         ...((typeof options?.params == 'function') ? options?.params() : options?.params),
+    //         ...((typeof options?.params == 'function') ? options.params() : options?.params),
     //     },
     //     config: {
-    //         ...((typeof base.defaultConfig == 'function') ? base.defaultConfig() : base.defaultConfig),
+    //         ...((typeof init?.defaultConfig == 'function') ? init.defaultConfig() : init?.defaultConfig),
     //         ...((typeof api.config == 'function') ? api.config() : api.config),
-    //         ...((typeof options?.config == 'function') ? options?.config() : options?.config),
+    //         ...((typeof options?.config == 'function') ? options.config() : options?.config),
     //     }
     // };
     try {
-        if (base.requestInterceptors) {
-            for (let interceptor of base.requestInterceptors) {
+        if (init?.requestInterceptors) {
+            for (let interceptor of init.requestInterceptors) {
                 const req = await interceptor(request);
                 if (!req) {
-                    return Promise.reject(await __error(base, api, request, 'The API \"' + api + '\" request was cancelled.'));
+                    return Promise.reject(await __error(init, api, request, 'The API \"' + api + '\" request was cancelled.'));
                 }
                 request = req;
             }
@@ -259,14 +255,14 @@ async function __request(base, api, options) {
         if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
             const mockHandler = api['mock'];
             if (mockHandler != undefined) {
-                return await __response(base, api, request, mockHandler(request));
+                return await __response(init, api, request, mockHandler(request));
             }
         }
         let data = await httpRequest(request);
-        return await __response(base, api, request, data);
+        return await __response(init, api, request, data);
     }
     catch (error) {
-        return Promise.reject(await __error(base, api, request, error));
+        return Promise.reject(await __error(init, api, request, error));
     }
 }
 function __merge(obj1, obj2) {
@@ -276,16 +272,16 @@ function __merge(obj1, obj2) {
     if (!obj2) {
         return obj1;
     }
-    let key;
-    for (key in obj2) {
+    for (let key in obj2) {
         // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，
         // 否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
         // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
-        obj1[key] = obj1[key] &&
-            obj1[key].toString() === "[object Object]" &&
-            (obj2[key] && obj2[key].toString() === "[object Object]")
-            ? __merge(obj1[key], obj2[key])
-            : (obj1[key] = obj2[key]);
+        let v1 = obj1[key];
+        let v2 = obj2[key];
+        obj1[key] = v1 && v1.toString() === "[object Object]" &&
+            (v2 && v2.toString() === "[object Object]")
+            ? __merge(v1, v2)
+            : (obj1[key] = v2);
     }
     return obj1;
 }
