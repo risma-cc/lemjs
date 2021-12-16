@@ -203,7 +203,7 @@ type IHttpClient = PropertyDescriptor & { init: HttpClientInit };
 export function httpClientGet(
     url: string,
     params?: HttpParams | ((...args: any) => HttpParams),
-    config?: HttpConfig | (() => HttpConfig)
+    config?: HttpConfig | ((...args: any) => HttpConfig)
 ) {
     return function (
         target: any,
@@ -217,7 +217,7 @@ export function httpClientGet(
             return __request({
                 url: url,
                 params: (typeof params === 'function') ? params(args) : params,
-                config: config,
+                config: (typeof config === 'function') ? config(args) : config,
                 response: await method.apply(this, args),
                 error: metadata && metadata.error,
                 mock: metadata && (() => metadata.mock)
@@ -234,7 +234,7 @@ export function httpClientGet(
 export function httpClientPost(
     url: string,
     params?: HttpParams | ((...args: any) => HttpParams),
-    config?: HttpConfig | (() => HttpConfig)
+    config?: HttpConfig | ((...args: any) => HttpConfig)
 ) {
     return function (
         target: any,
@@ -244,12 +244,12 @@ export function httpClientPost(
         const method = descriptor.value;
         if (!method) return;
         const metadata = Reflect.getMetadata(propertyKey, target)
-        descriptor.value = async function (...args: any) {
+        descriptor.value = async function () {
             return __request({
                 url: url,
-                params: (typeof params === 'function') ? params(args) : params,
-                config: config,
-                response: await method.apply(this, args),
+                params: (typeof params === 'function') ? params(arguments) : params,
+                config: (typeof config === 'function') ? config(arguments) : config,
+                response: await method.call(this, arguments),
                 error: metadata && metadata.error,
                 mock: metadata && (() => metadata.mock)
             }, {
@@ -265,22 +265,24 @@ export function httpClientPost(
 export function httpClientPostJson(
     url: string,
     params?: HttpParams | ((...args: any) => HttpParams),
-    config?: HttpConfig | (() => HttpConfig)
+    config?: HttpConfig | ((...args: any) => HttpConfig)
 ) {
     return function (
         target: any,
         propertyKey: string | symbol,
-        descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>
+        descriptor: PropertyDescriptor
     ) {
         const method = descriptor.value;
         if (!method) return;
         const metadata = Reflect.getMetadata(propertyKey, target)
-        descriptor.value = async function (...args: any) {
+        descriptor.value = async function () {
             return __request({
                 url: url,
-                params: (typeof params === 'function') ? params(args) : params,
-                config: config,
-                response: await method.apply(this, args),
+                params: (typeof params === 'function') ? params(arguments) : params,
+                config: (typeof config === 'function') ? config(arguments) : config,
+                response: (data: any, request: HttpRequest) => {
+                    return method.apply(this, [ ...arguments, data | {} as any ])
+                },
                 error: metadata && metadata.error,
                 mock: metadata && (() => metadata.mock)
             }, {
@@ -294,15 +296,29 @@ export function httpClientPostJson(
 }
 
 /*!
- * httpClientGet: Method decorator for HTTP API with GET method
+ * httpClientError: Method decorator for error handler of HTTP API
+ */
+export function httpClientError(error: ErrorHandler) {
+    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        // In case of non-production env and mock enabled,
+        // if a mock handler is defined, skips HTTP request.
+        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+            const metadata = Reflect.getMetadata(propertyKey, target);
+            Reflect.defineMetadata(propertyKey, { ...metadata, error: error }, target);
+        }
+    }
+}
+
+/*!
+ * httpClientMock: Method decorator for mock of HTTP API
  */
 export function httpClientMock(data: any) {
     return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
         // In case of non-production env and mock enabled,
         // if a mock handler is defined, skips HTTP request.
         if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-            const metadata = Reflect.getMetadata(propertyKey, target)
-            Reflect.defineMetadata(propertyKey, { ...metadata, mock: data }, target)
+            const metadata = Reflect.getMetadata(propertyKey, target);
+            Reflect.defineMetadata(propertyKey, { ...metadata, mock: data }, target);
         }
     }
 }
@@ -354,7 +370,7 @@ class HttpClientImpl implements HttpClient {
         if (!httpAPI) {
             return Promise.reject('The API \"' + api + '\" does NOT exist');
         }
-        return __request(httpAPI, options, this)
+        return __request(httpAPI, options, this);
     }
 }
 

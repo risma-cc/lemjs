@@ -101,17 +101,21 @@ export declare function httpClient(init: HttpClientInit): <T extends new (...arg
 /*!
  * httpClientGet: Method decorator for HTTP API with GET method
  */
-export declare function httpClientGet(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | (() => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
+export declare function httpClientGet(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | ((...args: any) => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
 /*!
  * httpClientPost: Method decorator for HTTP API with POST method
  */
-export declare function httpClientPost(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | (() => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
+export declare function httpClientPost(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | ((...args: any) => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
 /*!
  * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
  */
-export declare function httpClientPostJson(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | (() => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
+export declare function httpClientPostJson(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | ((...args: any) => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 /*!
- * httpClientGet: Method decorator for HTTP API with GET method
+ * httpClientError: Method decorator for error handler of HTTP API
+ */
+export declare function httpClientError(error: ErrorHandler): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+/*!
+ * httpClientMock: Method decorator for mock of HTTP API
  */
 export declare function httpClientMock(data: any): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 /*!
