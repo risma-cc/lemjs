@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 ;
 /*!
  * JsonBody: Converts an object to a JSON string
@@ -114,15 +115,21 @@ export function httpClient(init) {
 /*!
  * httpClientGet: Method decorator for HTTP API with GET method
  */
-export function httpClientGet(url) {
+export function httpClientGet(url, params, config) {
     return function (target, propertyKey, descriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api = {
-                ...{ url: url },
-                ...await method.apply(this, arguments)
-            };
-            return __request(api, {
+        const method = descriptor.value;
+        if (!method)
+            return;
+        const metadata = Reflect.getMetadata(propertyKey, target);
+        descriptor.value = async function (...args) {
+            return __request({
+                url: url,
+                params: (typeof params === 'function') ? params(args) : params,
+                config: config,
+                response: await method.apply(this, args),
+                error: metadata && metadata.error,
+                mock: metadata && (() => metadata.mock)
+            }, {
                 config: { method: 'GET' }
             }, this.init);
         };
@@ -131,15 +138,21 @@ export function httpClientGet(url) {
 /*!
  * httpClientPost: Method decorator for HTTP API with POST method
  */
-export function httpClientPost(url) {
+export function httpClientPost(url, params, config) {
     return function (target, propertyKey, descriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api = {
-                ...{ url: url },
-                ...await method.apply(this, arguments)
-            };
-            return __request(api, {
+        const method = descriptor.value;
+        if (!method)
+            return;
+        const metadata = Reflect.getMetadata(propertyKey, target);
+        descriptor.value = async function (...args) {
+            return __request({
+                url: url,
+                params: (typeof params === 'function') ? params(args) : params,
+                config: config,
+                response: await method.apply(this, args),
+                error: metadata && metadata.error,
+                mock: metadata && (() => metadata.mock)
+            }, {
                 config: { method: 'POST' }
             }, this.init);
         };
@@ -148,21 +161,40 @@ export function httpClientPost(url) {
 /*!
  * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
  */
-export function httpClientPostJson(url) {
+export function httpClientPostJson(url, params, config) {
     return function (target, propertyKey, descriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api = {
-                ...{ url: url },
-                ...await method.apply(this, arguments)
-            };
-            return __request(api, {
+        const method = descriptor.value;
+        if (!method)
+            return;
+        const metadata = Reflect.getMetadata(propertyKey, target);
+        descriptor.value = async function (...args) {
+            return __request({
+                url: url,
+                params: (typeof params === 'function') ? params(args) : params,
+                config: config,
+                response: await method.apply(this, args),
+                error: metadata && metadata.error,
+                mock: metadata && (() => metadata.mock)
+            }, {
                 config: {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 }
             }, this.init);
         };
+    };
+}
+/*!
+ * httpClientGet: Method decorator for HTTP API with GET method
+ */
+export function httpClientMock(data) {
+    return function (target, propertyKey, descriptor) {
+        // In case of non-production env and mock enabled,
+        // if a mock handler is defined, skips HTTP request.
+        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+            const metadata = Reflect.getMetadata(propertyKey, target);
+            Reflect.defineMetadata(propertyKey, { ...metadata, mock: data }, target);
+        }
     };
 }
 /*！

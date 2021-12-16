@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
@@ -38,6 +39,30 @@ export declare type ResponseAsyncHandler = (response: any, request: HttpRequest)
 export declare type ErrorHandler = (error: Error, request: HttpRequest) => any;
 export declare type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
 /*!
+ * JsonBody: Converts an object to a JSON string
+ */
+export declare function JsonBody(value: any): string;
+/*!
+ * FormBody: Converts elements to a FormData, e.g. file
+ */
+export declare function FormBody(elements: FormElement[]): FormData;
+/*!
+ * httpRequest: Send an HTTP request and return a response
+ */
+export declare function httpRequest(request: HttpRequest): Promise<any>;
+/*!
+ * httpGet: Send an HTTP GET request and return a response
+ */
+export declare function httpGet(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
+/*!
+ * httpPost: Send an HTTP POST request and return a response
+ */
+export declare function httpPost(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
+/*!
+ * httpPostJson: Send an HTTP POST request with JSON body and return a response
+ */
+export declare function httpPostJson(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
+/*!
  * HttpAPI: Definition of HTTP API.
  */
 export interface HttpAPI extends HttpRequest {
@@ -67,6 +92,29 @@ export interface HttpClientInit {
     errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
 }
 /*!
+ * httpClient: Class decorator for HTTP client
+ */
+export declare function httpClient(init: HttpClientInit): <T extends new (...args: any[]) => {}>(constructor: T) => {
+    new (...args: any[]): {};
+    init: HttpClientInit;
+} & T;
+/*!
+ * httpClientGet: Method decorator for HTTP API with GET method
+ */
+export declare function httpClientGet(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | (() => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
+/*!
+ * httpClientPost: Method decorator for HTTP API with POST method
+ */
+export declare function httpClientPost(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | (() => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
+/*!
+ * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
+ */
+export declare function httpClientPostJson(url: string, params?: HttpParams | ((...args: any) => HttpParams), config?: HttpConfig | (() => HttpConfig)): (target: any, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>) => void;
+/*!
+ * httpClientGet: Method decorator for HTTP API with GET method
+ */
+export declare function httpClientMock(data: any): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
+/*!
  * HttpClient: The client for providing encapsulated HTTP APIs.
  */
 export interface HttpClient extends HttpClientInit {
@@ -82,49 +130,6 @@ export interface HttpClient extends HttpClientInit {
      */
     fetch: (api: string, options?: HttpRequestOptions) => Promise<any>;
 }
-/*!
- * JsonBody: Converts an object to a JSON string
- */
-export declare function JsonBody(value: any): string;
-/*!
- * FormBody: Converts elements to a FormData, e.g. file
- */
-export declare function FormBody(elements: FormElement[]): FormData;
-/*!
- * httpRequest: Send an HTTP request and return a response
- */
-export declare function httpRequest(request: HttpRequest): Promise<any>;
-/*!
- * httpGet: Send an HTTP GET request and return a response
- */
-export declare function httpGet(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
-/*!
- * httpPost: Send an HTTP POST request and return a response
- */
-export declare function httpPost(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
-/*!
- * httpPostJson: Send an HTTP POST request with JSON body and return a response
- */
-export declare function httpPostJson(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
-/*!
- * httpClient: Class decorator for HTTP client
- */
-export declare function httpClient(init: HttpClientInit): <T extends new (...args: any[]) => {}>(constructor: T) => {
-    new (...args: any[]): {};
-    init: HttpClientInit;
-} & T;
-/*!
- * httpClientGet: Method decorator for HTTP API with GET method
- */
-export declare function httpClientGet(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-/*!
- * httpClientPost: Method decorator for HTTP API with POST method
- */
-export declare function httpClientPost(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
-/*!
- * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
- */
-export declare function httpClientPostJson(url: string): (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => void;
 export declare function makeHttpClient(init: HttpClientInit, apis: {
     [x: string]: HttpAPI;
 }): HttpClient;

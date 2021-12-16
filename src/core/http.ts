@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
@@ -40,55 +42,6 @@ export type ResponseHandler = (response: any, request: HttpRequest) => any;
 export type ResponseAsyncHandler = (response: any, request: HttpRequest) => Promise<any>;
 export type ErrorHandler = (error: Error, request: HttpRequest) => any;
 export type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
-
-/*!
- * HttpAPI: Definition of HTTP API.
- */
-export interface HttpAPI extends HttpRequest {
-    /*!
-     * response: Process response data and return them.
-     */
-    response?: ResponseHandler,
-
-    /*!
-     * error: Handles error.
-     */
-    error?: ErrorHandler,
-
-    /*!
-     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
-     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
-     */
-    mock?: (request: HttpRequest) => any,
-}
-
-/*!
- * HttpClientInit: Definition of an HTTP APIs client for initialization.
- */
-export interface HttpClientInit {
-    baseURL?: string,
-    defaultParams?: HttpParams | (() => HttpParams),
-    defaultConfig?: HttpConfig | (() => HttpConfig),
-    requestInterceptors?: RequestHandler[],
-    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[],
-    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[],
-}
-
-/*!
- * HttpClient: The client for providing encapsulated HTTP APIs.
- */
-export interface HttpClient extends HttpClientInit {
-    httpAPIs: { [x: string]: HttpAPI },
-
-    /*!
-     * fetch: Asynchronous handler of the API request and response.
-     * Request:
-     *   URL: Join the base URL and a sub-path (fetch options‘ url has priority over HttpAPI's)
-     *   Params: Combination of options' params, API's and client's default
-     *   Config: Combination of options' config, API's and client's default 
-     */
-    fetch: (api: string, options?: HttpRequestOptions) => Promise<any>,
-}
 
 /*!
  * JsonBody: Converts an object to a JSON string
@@ -199,10 +152,43 @@ export async function httpPostJson(url: string, params?: HttpParams, config?: Ht
 }
 
 /*!
+ * HttpAPI: Definition of HTTP API.
+ */
+export interface HttpAPI extends HttpRequest {
+    /*!
+     * response: Process response data and return them.
+     */
+    response?: ResponseHandler,
+
+    /*!
+     * error: Handles error.
+     */
+    error?: ErrorHandler,
+
+    /*!
+     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
+     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
+     */
+    mock?: (request: HttpRequest) => any,
+}
+
+/*!
+ * HttpClientInit: Definition of an HTTP APIs client for initialization.
+ */
+export interface HttpClientInit {
+    baseURL?: string,
+    defaultParams?: HttpParams | (() => HttpParams),
+    defaultConfig?: HttpConfig | (() => HttpConfig),
+    requestInterceptors?: RequestHandler[],
+    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[],
+    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[],
+}
+
+/*!
  * httpClient: Class decorator for HTTP client
  */
 export function httpClient(init: HttpClientInit) {
-    return function <T extends {new(...args:any[]):{}}>(constructor: T) {
+    return function <T extends { new(...args: any[]): {} }>(constructor: T) {
         return class extends constructor {
             static init = init;
         }
@@ -214,15 +200,28 @@ type IHttpClient = PropertyDescriptor & { init: HttpClientInit };
 /*!
  * httpClientGet: Method decorator for HTTP API with GET method
  */
-export function httpClientGet(url: string) {
-    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api: HttpAPI = {
-                ...{ url: url },
-                ...await method.apply(this, arguments)
-            };
-            return __request(api, {
+export function httpClientGet(
+    url: string,
+    params?: HttpParams | ((...args: any) => HttpParams),
+    config?: HttpConfig | (() => HttpConfig)
+) {
+    return function (
+        target: any,
+        propertyKey: string | symbol,
+        descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>
+    ) {
+        const method = descriptor.value;
+        if (!method) return;
+        const metadata = Reflect.getMetadata(propertyKey, target)
+        descriptor.value = async function (...args: any) {
+            return __request({
+                url: url,
+                params: (typeof params === 'function') ? params(args) : params,
+                config: config,
+                response: await method.apply(this, args),
+                error: metadata && metadata.error,
+                mock: metadata && (() => metadata.mock)
+            }, {
                 config: { method: 'GET' }
             }, (this as IHttpClient).init);
         }
@@ -232,15 +231,28 @@ export function httpClientGet(url: string) {
 /*!
  * httpClientPost: Method decorator for HTTP API with POST method
  */
-export function httpClientPost(url: string) {
-    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api: HttpAPI = {
-                ...{ url: url },
-                ...await method.apply(this, arguments)
-            };
-            return __request(api, {
+export function httpClientPost(
+    url: string,
+    params?: HttpParams | ((...args: any) => HttpParams),
+    config?: HttpConfig | (() => HttpConfig)
+) {
+    return function (
+        target: any,
+        propertyKey: string | symbol,
+        descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>
+    ) {
+        const method = descriptor.value;
+        if (!method) return;
+        const metadata = Reflect.getMetadata(propertyKey, target)
+        descriptor.value = async function (...args: any) {
+            return __request({
+                url: url,
+                params: (typeof params === 'function') ? params(args) : params,
+                config: config,
+                response: await method.apply(this, args),
+                error: metadata && metadata.error,
+                mock: metadata && (() => metadata.mock)
+            }, {
                 config: { method: 'POST' }
             }, (this as IHttpClient).init);
         }
@@ -250,15 +262,28 @@ export function httpClientPost(url: string) {
 /*!
  * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
  */
-export function httpClientPostJson(url: string) {
-    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-        let method = descriptor.value;
-        descriptor.value = async function () {
-            let api: HttpAPI = {
-                ...{ url: url },
-                ...await method.apply(this, arguments)
-            };
-            return __request(api, {
+export function httpClientPostJson(
+    url: string,
+    params?: HttpParams | ((...args: any) => HttpParams),
+    config?: HttpConfig | (() => HttpConfig)
+) {
+    return function (
+        target: any,
+        propertyKey: string | symbol,
+        descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>
+    ) {
+        const method = descriptor.value;
+        if (!method) return;
+        const metadata = Reflect.getMetadata(propertyKey, target)
+        descriptor.value = async function (...args: any) {
+            return __request({
+                url: url,
+                params: (typeof params === 'function') ? params(args) : params,
+                config: config,
+                response: await method.apply(this, args),
+                error: metadata && metadata.error,
+                mock: metadata && (() => metadata.mock)
+            }, {
                 config: {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
@@ -266,6 +291,36 @@ export function httpClientPostJson(url: string) {
             }, (this as IHttpClient).init);
         }
     }
+}
+
+/*!
+ * httpClientGet: Method decorator for HTTP API with GET method
+ */
+export function httpClientMock(data: any) {
+    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        // In case of non-production env and mock enabled,
+        // if a mock handler is defined, skips HTTP request.
+        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+            const metadata = Reflect.getMetadata(propertyKey, target)
+            Reflect.defineMetadata(propertyKey, { ...metadata, mock: data }, target)
+        }
+    }
+}
+
+/*!
+ * HttpClient: The client for providing encapsulated HTTP APIs.
+ */
+export interface HttpClient extends HttpClientInit {
+    httpAPIs: { [x: string]: HttpAPI },
+
+    /*!
+     * fetch: Asynchronous handler of the API request and response.
+     * Request:
+     *   URL: Join the base URL and a sub-path (fetch options‘ url has priority over HttpAPI's)
+     *   Params: Combination of options' params, API's and client's default
+     *   Config: Combination of options' config, API's and client's default 
+     */
+    fetch: (api: string, options?: HttpRequestOptions) => Promise<any>,
 }
 
 /*！
