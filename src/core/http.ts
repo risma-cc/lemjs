@@ -152,30 +152,9 @@ export async function httpPostJson(url: string, params?: HttpParams, config?: Ht
 }
 
 /*!
- * HttpAPI: Definition of HTTP API.
+ * HttpClient: Definition of an HTTP client.
  */
-export interface HttpAPI extends HttpRequest {
-    /*!
-     * response: Process response data and return them.
-     */
-    response?: ResponseHandler,
-
-    /*!
-     * error: Handles error.
-     */
-    error?: ErrorHandler,
-
-    /*!
-     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
-     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
-     */
-    mock?: (request: HttpRequest) => any,
-}
-
-/*!
- * HttpClientInit: Definition of an HTTP APIs client for initialization.
- */
-export interface HttpClientInit {
+export interface HttpClient {
     baseURL?: string,
     defaultParams?: HttpParams | (() => HttpParams),
     defaultConfig?: HttpConfig | (() => HttpConfig),
@@ -185,258 +164,64 @@ export interface HttpClientInit {
 }
 
 /*!
- * httpClient: Class decorator for HTTP client
+ * HttpAPI: Definition of an HTTP API.
  */
-export function httpClient(init: HttpClientInit) {
-    return function <T extends { new(...args: any[]): {} }>(constructor: T) {
-        return class extends constructor {
-            static init = init;
-        }
-    }
-}
-
-type IHttpClient = PropertyDescriptor & { init: HttpClientInit };
-
-/*!
- * httpClientGet: Method decorator for HTTP API with GET method
- */
-export function httpClientGet(
-    url: string,
-    params?: HttpParams | ((...args: any) => HttpParams),
-    config?: HttpConfig | ((...args: any) => HttpConfig)
-) {
-    return function (
-        target: any,
-        propertyKey: string | symbol,
-        descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>
-    ) {
-        const method = descriptor.value;
-        if (!method) return;
-        const metadata = Reflect.getMetadata(propertyKey, target)
-        descriptor.value = async function (...args: any) {
-            return __request({
-                url: url,
-                params: (typeof params === 'function') ? params(args) : params,
-                config: (typeof config === 'function') ? config(args) : config,
-                response: await method.apply(this, args),
-                error: metadata && metadata.error,
-                mock: metadata && (() => metadata.mock)
-            }, {
-                config: { method: 'GET' }
-            }, (this as IHttpClient).init);
-        }
-    }
-}
-
-/*!
- * httpClientPost: Method decorator for HTTP API with POST method
- */
-export function httpClientPost(
-    url: string,
-    params?: HttpParams | ((...args: any) => HttpParams),
-    config?: HttpConfig | ((...args: any) => HttpConfig)
-) {
-    return function (
-        target: any,
-        propertyKey: string | symbol,
-        descriptor: TypedPropertyDescriptor<(...args: any) => Promise<(data: any) => void>>
-    ) {
-        const method = descriptor.value;
-        if (!method) return;
-        const metadata = Reflect.getMetadata(propertyKey, target)
-        descriptor.value = async function () {
-            return __request({
-                url: url,
-                params: (typeof params === 'function') ? params(arguments) : params,
-                config: (typeof config === 'function') ? config(arguments) : config,
-                response: await method.call(this, arguments),
-                error: metadata && metadata.error,
-                mock: metadata && (() => metadata.mock)
-            }, {
-                config: { method: 'POST' }
-            }, (this as IHttpClient).init);
-        }
-    }
-}
-
-/*!
- * httpClientPostJson: Method decorator for HTTP API with POST method and JSON content type
- */
-export function httpClientPostJson(
-    url: string,
-    params?: HttpParams | ((...args: any) => HttpParams),
-    config?: HttpConfig | ((...args: any) => HttpConfig)
-) {
-    return function (
-        target: any,
-        propertyKey: string | symbol,
-        descriptor: PropertyDescriptor
-    ) {
-        const method = descriptor.value;
-        if (!method) return;
-        const metadata = Reflect.getMetadata(propertyKey, target)
-        descriptor.value = async function () {
-            return __request({
-                url: url,
-                params: (typeof params === 'function') ? params(arguments) : params,
-                config: (typeof config === 'function') ? config(arguments) : config,
-                response: (data: any, request: HttpRequest) => {
-                    return method.apply(this, [ ...arguments, data | {} as any ])
-                },
-                error: metadata && metadata.error,
-                mock: metadata && (() => metadata.mock)
-            }, {
-                config: {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            }, (this as IHttpClient).init);
-        }
-    }
-}
-
-/*!
- * httpClientError: Method decorator for error handler of HTTP API
- */
-export function httpClientError(error: ErrorHandler) {
-    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-        // In case of non-production env and mock enabled,
-        // if a mock handler is defined, skips HTTP request.
-        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-            const metadata = Reflect.getMetadata(propertyKey, target);
-            Reflect.defineMetadata(propertyKey, { ...metadata, error: error }, target);
-        }
-    }
-}
-
-/*!
- * httpClientMock: Method decorator for mock of HTTP API
- */
-export function httpClientMock(data: any) {
-    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-        // In case of non-production env and mock enabled,
-        // if a mock handler is defined, skips HTTP request.
-        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-            const metadata = Reflect.getMetadata(propertyKey, target);
-            Reflect.defineMetadata(propertyKey, { ...metadata, mock: data }, target);
-        }
-    }
-}
-
-/*!
- * HttpClient: The client for providing encapsulated HTTP APIs.
- */
-export interface HttpClient extends HttpClientInit {
-    httpAPIs: { [x: string]: HttpAPI },
+export interface HttpAPI extends HttpRequest {
+    /*!
+     * response: Process response data and return them.
+     */
+    response?: ResponseHandler | ResponseAsyncHandler,
 
     /*!
-     * fetch: Asynchronous handler of the API request and response.
-     * Request:
-     *   URL: Join the base URL and a sub-path (fetch options‘ url has priority over HttpAPI's)
-     *   Params: Combination of options' params, API's and client's default
-     *   Config: Combination of options' config, API's and client's default 
+     * error: Handles error.
      */
-    fetch: (api: string, options?: HttpRequestOptions) => Promise<any>,
+    error?: ErrorHandler | ErrorAsyncHandler,
+
+    /*!
+     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
+     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
+     */
+    mock?: (request: HttpRequest) => any,
 }
 
-/*！
- * makeHttpClient: Create an HTTP client.
- */
-export function makeHttpClient(init: HttpClientInit, apis: { [x: string]: HttpAPI }): HttpClient {
-    return new HttpClientImpl(init, apis);
+export async function httpClientGet(client: HttpClient, api: HttpAPI) {
+    return __request(client, {
+        ...api,
+        config: { method: 'GET' }
+    })
 }
 
-class HttpClientImpl implements HttpClient {
-    httpAPIs: { [x: string]: HttpAPI };
-    baseURL?: string;
-    defaultParams?: HttpParams | (() => HttpParams);
-    defaultConfig?: HttpConfig | (() => HttpConfig);
-    requestInterceptors?: RequestHandler[];
-    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
-    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
+export async function httpClientPost(client: HttpClient, api: HttpAPI) {
+    return __request(client, {
+        ...api,
+        config: { method: 'POST' }
+    })
+}
 
-    constructor(init: HttpClientInit, apis: { [x: string]: HttpAPI }) {
-        this.httpAPIs = apis;
-        this.baseURL = init.baseURL;
-        this.defaultParams = init.defaultParams;
-        this.defaultConfig = init.defaultConfig;
-        this.requestInterceptors = init.requestInterceptors;
-        this.responseInterceptors = init.responseInterceptors;
-        this.errorInterceptors = init.errorInterceptors;
-    }
-
-    async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
-        let httpAPI = this.httpAPIs[api];
-        if (!httpAPI) {
-            return Promise.reject('The API \"' + api + '\" does NOT exist');
+export async function httpClientPostJson(client: HttpClient, api: HttpAPI) {
+    return __request(client, {
+        ...api,
+        config: {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
         }
-        return __request(httpAPI, options, this);
-    }
+    })
 }
 
-async function __response(api: HttpAPI, request: HttpRequest, data: any, init?: HttpClientInit) {
-    if (init?.responseInterceptors) {
-        for (let interceptor of init.responseInterceptors) {
-            data = await interceptor(data, request);
-        }
-    }
-    const respHanlder = api['response'];
-    if (respHanlder) {
-        data = await respHanlder(data, request);
-    }
-    return data;
-}
-
-async function __error(api: HttpAPI, request: HttpRequest, error: any, init?: HttpClientInit) {
-    try {
-        if (init?.errorInterceptors) {
-            for (let interceptor of init.errorInterceptors) {
-                error = await interceptor(error, request);
-            }
-        }
-        const errorHanlder = api['error'];
-        if (errorHanlder) {
-            error = await errorHanlder(error, request);
-        }
-        return error;
-    } catch {
-        return error;
-    }
-}
-
-async function __request(api: HttpAPI, options?: HttpRequestOptions, init?: HttpClientInit) {
+async function __request(client: HttpClient, api: HttpAPI) {
     // Make a request object
     let request: HttpRequest = {
-        url: init?.baseURL + (options?.url ? options.url : api.url),
-        params: __merge(__merge(
-            (typeof init?.defaultParams == 'function') ? init.defaultParams() : init?.defaultParams,
-            (typeof api.params == 'function') ? api.params() : api.params
-        ), (typeof options?.params == 'function') ? options.params() : options?.params),
-        config: __merge(__merge(
-            (typeof init?.defaultConfig == 'function') ? init.defaultConfig() : init?.defaultConfig,
-            (typeof api.config == 'function') ? api.config() : api.config
-        ), (typeof options?.config == 'function') ? options.config() : options?.config)
-    };
-    // let request: HttpRequest = {
-    //     url: init?.baseURL + (options?.url ? options.url : api.url),
-    //     params: {
-    //         ...((typeof init?.defaultParams == 'function') ? init.defaultParams() : init?.defaultParams),
-    //         ...((typeof api.params == 'function') ? api.params() : api.params),
-    //         ...((typeof options?.params == 'function') ? options.params() : options?.params),
-    //     },
-    //     config: {
-    //         ...((typeof init?.defaultConfig == 'function') ? init.defaultConfig() : init?.defaultConfig),
-    //         ...((typeof api.config == 'function') ? api.config() : api.config),
-    //         ...((typeof options?.config == 'function') ? options.config() : options?.config),
-    //     }
-    // };
+        url: client.baseURL + api.url,
+        params: __merge((typeof client.defaultParams == 'function') ? client.defaultParams() : client.defaultParams, api.params),
+        config: __merge((typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig, api.config)
+    }
 
     try {
-        if (init?.requestInterceptors) {
-            for (let interceptor of init.requestInterceptors) {
+        if (client.requestInterceptors) {
+            for (let interceptor of client.requestInterceptors) {
                 const req = await interceptor(request);
                 if (!req) {
-                    return Promise.reject(await __error(api, request, 'The API \"' + api + '\" request was cancelled.', init));
+                    return Promise.reject(await __error(client, request, 'The request \"' + api.url + '\" was cancelled.', api.error));
                 }
                 request = req;
             }
@@ -445,15 +230,46 @@ async function __request(api: HttpAPI, options?: HttpRequestOptions, init?: Http
         // In case of non-production env and mock enabled,
         // if a mock handler is defined, skips HTTP request.
         if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-            const mockHandler = api['mock'];
-            if (mockHandler != undefined) {
-                return await __response(api, request, mockHandler(request), init);
+            if (api.mock) {
+                return await __response(client, request, api.mock, api.response);
             }
         }
         let data = await httpRequest(request);
-        return await __response(api, request, data, init);
+        return await __response(client, request, data, api.response);
     } catch (error) {
-        return Promise.reject(await __error(api, request, error, init));
+        return Promise.reject(await __error(client, request, error, api.error));
+    }
+}
+
+async function __response(
+    client: HttpClient,
+    request: HttpRequest,
+    data: any,
+    responseHandler?: ResponseHandler | ResponseAsyncHandler
+) {
+    if (client.responseInterceptors) {
+        for (let interceptor of client.responseInterceptors) {
+            data = await interceptor(data, request);
+        }
+    }
+    return responseHandler ? await responseHandler(data, request) : data;
+}
+
+async function __error(
+    client: HttpClient,
+    request: HttpRequest,
+    error: any,
+    errorHandler?: ErrorHandler | ErrorAsyncHandler
+) {
+    try {
+        if (client.errorInterceptors) {
+            for (let interceptor of client.errorInterceptors) {
+                error = await interceptor(error, request);
+            }
+        }
+        return errorHandler ? await errorHandler(error, request) : error;
+    } catch(err: any) {
+        return err;
     }
 }
 

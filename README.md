@@ -99,63 +99,9 @@ https://github.com/risma-cc/lemjs
     }
 
 ## HTTP Client
-### 定义HTTP服务接口
+### 定义HTTP服务Client
 
-    const myAPIs = {
-        'hello': {
-            /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
-            url: '/hello/{you}',
-            /*
-                * 请求URL参数。
-                * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
-                */
-            params: {
-                'you': 'Jack',
-                'color': 'red'
-            },
-            /* 请求配置选项，参考fetch的RequestInit。 */
-            config: {
-                /* HTTP请求方法，缺省为“GET”。 */
-                method: ‘POST’,
-                /*
-                    * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
-                    * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
-                    */
-                body: FormBody([
-                    {
-                        name: 'avatar',
-                        value: /* 文件Blob/File */,
-                        fileName: 'myavatar.jpg'
-                    }
-                ])
-            },
-            /* 响应处理，data根据Content-Type已转换成string、FormData、JSON对象或者blob。 */
-            response: (data: any, request: HttpRequest) => {
-                let { name } = data;
-                if (!name) {
-                    throw new Error('Wrong result');
-                }
-                return { answer: 'Hello ' + name };
-            },
-            /* 错误处理，包括网络失败、HTTP非200状态等。 */
-            error: (error: any, request: HttpRequest) => {
-                return error
-            },
-            /*
-             * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
-             * 当环境变量NODE_ENV为"production"或者MOCK为"none"时，mock将被忽略。
-             */
-            mock: (request: HttpRequest) => {
-                return { answer: 'Hello Jack' };
-            }
-        },
-    }
-
-### 创建HTTP服务Client
-
-    const myClient = makeHttpClient({
-        /* 接口定义 */
-        httpAPIs: myAPIs,
+    const myClient: HttpClient = {
         /* 统一的URL前缀 */
         baseURL: 'http://a.b.c/api',
         /* 默认URL参数。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
@@ -195,31 +141,88 @@ https://github.com/risma-cc/lemjs
         ],
     });
 
+### 定义HTTP API
+
+    const api: HttpAPI = {
+        /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
+        url: '/hello/{you}',
+        /*
+            * 请求URL参数。
+            * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
+            */
+        params: {
+            'you': 'Jack',
+            'color': 'red'
+        },
+        /* 请求配置选项，参考fetch的RequestInit。 */
+        config: {
+            /* HTTP请求方法，缺省为“GET”。 */
+            method: ‘POST’,
+            /*
+                * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
+                * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
+                */
+            body: FormBody([
+                {
+                    name: 'avatar',
+                    value: /* 文件Blob/File */,
+                    fileName: 'myavatar.jpg'
+                }
+            ])
+        },
+        /* 响应处理，data根据Content-Type已转换成string、FormData、JSON对象或者blob。 */
+        response: (data: any, request: HttpRequest) => {
+            let { name } = data;
+            if (!name) {
+                throw new Error('Wrong result');
+            }
+            return { answer: 'Hello ' + name };
+        },
+        /* 错误处理，包括网络失败、HTTP非200状态等。 */
+        error: (error: any, request: HttpRequest) => {
+            return error
+        },
+        /*
+            * 如果定义了mock方法，则跳过HTTP请求，模拟接口响应数据。
+            * 当环境变量NODE_ENV为"production"或者MOCK为"none"时，mock将被忽略。
+            */
+        mock: (request: HttpRequest) => {
+            return { answer: 'Hello Jack' };
+        }
+    }
+
 ### 使用HTTP服务接口
 
     /*
-     * 接口的URL路径、URL参数、配置选项在HttpAPI以及fetch都可以指定，还有HttpClient中的默认值，他们会自动合并。
-     * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再HttpAPI、最后HttpClient默认值。
+     * 接口的URL参数、配置选项在HttpClient与HttpAPI都可以指定，他们会自动合并。
+     * 当同一属性出现多次时，HttpAPI会覆盖HttpClient默认值。
      */
-    let result = await myClient.fetch('hello', { params: { 'myname': 'Michael' }});
+    let result = await httpClientGet(myClient, api);
+    let result = await httpClientPost(myClient, api);
+    let result = await httpClientPostJson(myClient, api);
 
-### 自定义Service
-绝大部分实际情况中，Model数据都是先调用HTTP服务接口，根据响应数据来进行更新的。因此，建议定义一层Service方法来实现不同的业务逻辑，以封装HTTP API调用以及Model数据更新，并在View层（React组件）调用。
+### 自定义Service类
+绝大部分实际情况中，Model数据都是先调用HTTP服务接口，根据响应数据来进行更新的。因此，建议定义一层Service类来实现不同的业务逻辑，以封装HTTP API调用以及Model数据更新，并在View层（React组件）调用。
 
 *svc.ts*
 
-    export async function hello(myName: string) {
-        let result = await myClient.fetch('login', {
-            params: {
-                'myName': myName,
-            }
-        });
-        myModel.update('set', { answer: result.answer });
+    import myClient from './http/client';
+
+    class Svc {
+        static async hello(myName: string) {
+            let result = await httpClientPost(myClient, {
+                url: '/hello',
+                config: {
+                    body: JsonBody({ myName: myName })
+                }
+            });
+            myModel.update('set', { answer: result.answer });
+        }
     }
 
 *page.ts*
 
-    import * as svc from './svc';
+    import Svc from './svc';
     
     export default () => {
         const { answer } = useModel(myModel);
@@ -227,7 +230,7 @@ https://github.com/risma-cc/lemjs
         return (
             <div>
                 <h1>{answer}</h1>
-                <a onClick={{() => svc.hello('Ryan')}>Hello</a>
+                <a onClick={{() => Svc.hello('Ryan')}>Hello</a>
             </div>
         );
     }
