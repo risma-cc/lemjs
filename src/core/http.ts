@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
@@ -38,10 +36,8 @@ export interface HttpRequestOptions {
 };
 
 export type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
-export type ResponseHandler = (response: any, request: HttpRequest) => any;
-export type ResponseAsyncHandler = (response: any, request: HttpRequest) => Promise<any>;
-export type ErrorHandler = (error: Error, request: HttpRequest) => any;
-export type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
+export type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
+export type ErrorHandler = (error: Error, request: HttpRequest) => (any | Promise<any>);
 
 /*!
  * JsonBody: Converts an object to a JSON string
@@ -143,11 +139,10 @@ export async function httpPostJson(url: string, params?: HttpParams, config?: Ht
     return await httpRequest({
         url: url,
         params: params,
-        config: {
-            ...config,
+        config: __mergeConfig(config, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
-        },
+        }),
     });
 }
 
@@ -159,8 +154,8 @@ export interface HttpClient {
     defaultParams?: HttpParams | (() => HttpParams),
     defaultConfig?: HttpConfig | (() => HttpConfig),
     requestInterceptors?: RequestHandler[],
-    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[],
-    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[],
+    responseInterceptors?: (ResponseHandler)[],
+    errorInterceptors?: (ErrorHandler)[],
 }
 
 /*!
@@ -170,12 +165,12 @@ export interface HttpAPI extends HttpRequest {
     /*!
      * response: Process response data and return them.
      */
-    response?: ResponseHandler | ResponseAsyncHandler,
+    response?: ResponseHandler,
 
     /*!
      * error: Handles error.
      */
-    error?: ErrorHandler | ErrorAsyncHandler,
+    error?: ErrorHandler,
 
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
@@ -185,35 +180,32 @@ export interface HttpAPI extends HttpRequest {
 }
 
 export async function httpClientGet(client: HttpClient, api: HttpAPI) {
-    return __request(client, {
-        ...api,
-        config: { method: 'GET' }
-    })
+    return __request(client, api, { method: 'GET' });
 }
 
 export async function httpClientPost(client: HttpClient, api: HttpAPI) {
-    return __request(client, {
-        ...api,
-        config: { method: 'POST' }
-    })
+    return __request(client, api, { method: 'POST' });
 }
 
 export async function httpClientPostJson(client: HttpClient, api: HttpAPI) {
-    return __request(client, {
-        ...api,
-        config: {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        }
-    })
+    return __request(client, api, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    });
 }
 
-async function __request(client: HttpClient, api: HttpAPI) {
+async function __request(client: HttpClient, api: HttpAPI, config: HttpConfig) {
     // Make a request object
     let request: HttpRequest = {
         url: client.baseURL + api.url,
-        params: __merge((typeof client.defaultParams == 'function') ? client.defaultParams() : client.defaultParams, api.params),
-        config: __merge((typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig, api.config)
+        params: {
+            ...(typeof client.defaultParams === 'function') ? client.defaultParams() : client.defaultParams,
+            ...(typeof api.params === 'function') ? api.params() : api.params
+        },
+        config: __mergeConfig(__mergeConfig(
+            (typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig,
+            (typeof api.config === 'function') ? api.config() : api.config
+        ), config)
     }
 
     try {
@@ -245,7 +237,7 @@ async function __response(
     client: HttpClient,
     request: HttpRequest,
     data: any,
-    responseHandler?: ResponseHandler | ResponseAsyncHandler
+    responseHandler?: ResponseHandler
 ) {
     if (client.responseInterceptors) {
         for (let interceptor of client.responseInterceptors) {
@@ -259,7 +251,7 @@ async function __error(
     client: HttpClient,
     request: HttpRequest,
     error: any,
-    errorHandler?: ErrorHandler | ErrorAsyncHandler
+    errorHandler?: ErrorHandler
 ) {
     try {
         if (client.errorInterceptors) {
@@ -273,23 +265,15 @@ async function __error(
     }
 }
 
-function __merge(obj1: any, obj2: any) {
-    if (!obj1) {
-        return obj2;
+function __mergeConfig(cfg1: HttpConfig | undefined, cfg2: HttpConfig | undefined) {
+    if (!cfg2) {
+        return cfg1;
     }
-    if (!obj2) {
-        return obj1;
+    if (!cfg1) {
+        return cfg2;
     }
-    for (let key in obj2) {
-        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，
-        // 否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
-        // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
-        let v1 = obj1[key];
-        let v2 = obj2[key];
-        obj1[key] = v1 && v1.toString() === "[object Object]" &&
-            (v2 && v2.toString() === "[object Object]")
-            ? __merge(v1, v2)
-            : (obj1[key] = v2);
-    }
-    return obj1;
+    return {
+        ...cfg1, ...cfg2,
+        headers: { ...cfg1.headers, ...cfg2.headers }
+    } as HttpConfig;
 }

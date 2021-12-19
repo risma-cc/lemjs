@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
@@ -34,10 +33,8 @@ export interface HttpRequestOptions {
     config?: HttpConfig | (() => HttpConfig);
 }
 export declare type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
-export declare type ResponseHandler = (response: any, request: HttpRequest) => any;
-export declare type ResponseAsyncHandler = (response: any, request: HttpRequest) => Promise<any>;
-export declare type ErrorHandler = (error: Error, request: HttpRequest) => any;
-export declare type ErrorAsyncHandler = (error: Error, request: HttpRequest) => Promise<any>;
+export declare type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
+export declare type ErrorHandler = (error: Error, request: HttpRequest) => (any | Promise<any>);
 /*!
  * JsonBody: Converts an object to a JSON string
  */
@@ -70,8 +67,8 @@ export interface HttpClient {
     defaultParams?: HttpParams | (() => HttpParams);
     defaultConfig?: HttpConfig | (() => HttpConfig);
     requestInterceptors?: RequestHandler[];
-    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
-    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
+    responseInterceptors?: (ResponseHandler)[];
+    errorInterceptors?: (ErrorHandler)[];
 }
 /*!
  * HttpAPI: Definition of an HTTP API.
@@ -80,11 +77,11 @@ export interface HttpAPI extends HttpRequest {
     /*!
      * response: Process response data and return them.
      */
-    response?: ResponseHandler | ResponseAsyncHandler;
+    response?: ResponseHandler;
     /*!
      * error: Handles error.
      */
-    error?: ErrorHandler | ErrorAsyncHandler;
+    error?: ErrorHandler;
     /*!
      * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
      * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
