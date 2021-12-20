@@ -65,7 +65,7 @@ export async function httpRequest(request) {
         const l = resp.headers.get('Location');
         window.location.assign(l == null ? '' : l);
     }
-    return Promise.reject(resp.statusText);
+    return Promise.reject(Error(resp.statusText));
 }
 /*!
  * httpGet: Send an HTTP GET request and return a response
@@ -127,7 +127,7 @@ async function __request(client, api, config) {
             for (let interceptor of client.requestInterceptors) {
                 const req = await interceptor(request);
                 if (!req) {
-                    return Promise.reject(await __error(client, request, 'The request \"' + api.url + '\" was cancelled.', api.error));
+                    return Promise.reject(await __error(client, request, Error('The request \"' + api.url + '\" was cancelled.'), api.error));
                 }
                 request = req;
             }

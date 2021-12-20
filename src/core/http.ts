@@ -37,7 +37,7 @@ export interface HttpRequestOptions {
 
 export type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
 export type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
-export type ErrorHandler = (error: Error, request: HttpRequest) => (any | Promise<any>);
+export type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
 
 /*!
  * JsonBody: Converts an object to a JSON string
@@ -107,7 +107,7 @@ export async function httpRequest(request: HttpRequest) {
         const l = resp.headers.get('Location')
         window.location.assign(l == null ? '' : l);
     }
-    return Promise.reject(resp.statusText);
+    return Promise.reject(Error(resp.statusText));
 }
 
 /*!
@@ -154,8 +154,8 @@ export interface HttpClient {
     defaultParams?: HttpParams | (() => HttpParams),
     defaultConfig?: HttpConfig | (() => HttpConfig),
     requestInterceptors?: RequestHandler[],
-    responseInterceptors?: (ResponseHandler)[],
-    errorInterceptors?: (ErrorHandler)[],
+    responseInterceptors?: ResponseHandler[],
+    errorInterceptors?: ErrorHandler[],
 }
 
 /*!
@@ -213,7 +213,7 @@ async function __request(client: HttpClient, api: HttpAPI, config: HttpConfig) {
             for (let interceptor of client.requestInterceptors) {
                 const req = await interceptor(request);
                 if (!req) {
-                    return Promise.reject(await __error(client, request, 'The request \"' + api.url + '\" was cancelled.', api.error));
+                    return Promise.reject(await __error(client, request, Error('The request \"' + api.url + '\" was cancelled.'), api.error));
                 }
                 request = req;
             }
@@ -250,7 +250,7 @@ async function __response(
 async function __error(
     client: HttpClient,
     request: HttpRequest,
-    error: any,
+    error: Error,
     errorHandler?: ErrorHandler
 ) {
     try {
@@ -260,7 +260,7 @@ async function __error(
             }
         }
         return errorHandler ? await errorHandler(error, request) : error;
-    } catch(err: any) {
+    } catch(err) {
         return err;
     }
 }

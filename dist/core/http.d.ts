@@ -34,7 +34,7 @@ export interface HttpRequestOptions {
 }
 export declare type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
 export declare type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
-export declare type ErrorHandler = (error: Error, request: HttpRequest) => (any | Promise<any>);
+export declare type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
 /*!
  * JsonBody: Converts an object to a JSON string
  */
@@ -67,8 +67,8 @@ export interface HttpClient {
     defaultParams?: HttpParams | (() => HttpParams);
     defaultConfig?: HttpConfig | (() => HttpConfig);
     requestInterceptors?: RequestHandler[];
-    responseInterceptors?: (ResponseHandler)[];
-    errorInterceptors?: (ErrorHandler)[];
+    responseInterceptors?: ResponseHandler[];
+    errorInterceptors?: ErrorHandler[];
 }
 /*!
  * HttpAPI: Definition of an HTTP API.
