@@ -4,6 +4,9 @@
 ### Changed
 - HTTP: Refactor HttpClient
 
+### Removed
+- Model: query in model
+
 ## V0.3.1 | 2021-12-08
 ### Fixed
 - Code small

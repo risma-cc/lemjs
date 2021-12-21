@@ -16,26 +16,19 @@ https://github.com/risma-cc/lemjs
 
     interface A {
         a: number,
-        answer: string,
+        b: string,
     }
 
     const myModel = makeModel<A>({
         /* 数据初始化 */
         state: {
             a: 0,
-            answer: '',
-        },
-        /* 查询方法 */
-        query: {
-            'ab': (payload: any, state: A): any => {
-                return { a: state.a, b: state.answer };
-            },
+            b: '',
         },
         /* 更新方法 */
         update: {
             'add': (payload: any, state: A): A => {
-                let { x } = payload;
-                return { ...state, a: a + x };
+                return { ...state, a: a + payload as number };
             },
             'set': (payload: any, state: A): A => {
                 return { ...state, ...payload };
@@ -60,7 +53,7 @@ https://github.com/risma-cc/lemjs
             <div>
                 <h1>a is {state.a}</h1>
                 /* 调用模型的update方法进行数据访问与处理。 */
-                <a onClick={() => myModel.update('add', { x: 1 })}></a>
+                <a onClick={() => myModel.update('add', 1)}></a>
             </div>
         );
     }
@@ -92,7 +85,7 @@ https://github.com/risma-cc/lemjs
                 <div>
                     <h1>a is {this.state.a}</h1>
                     /* 调用模型的update方法进行数据访问与处理。 */
-                    <a onClick={() => myModel.update('add', { x: 1 })}></a>
+                    <a onClick={() => myModel.update('add', 1)}></a>
                 </div>
             );
         }

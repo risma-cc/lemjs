@@ -6,40 +6,30 @@ export function makeModel(init) {
 }
 class ModelImpl {
     state;
-    _query;
     _update;
-    _eventUpdated;
+    _callbacks;
     constructor(init) {
         this.state = init.state;
-        this._query = init.query;
         this._update = init.update;
-        this._eventUpdated = new Set();
+        this._callbacks = new Set();
     }
     get() {
         return this.state;
     }
-    query(action, payload) {
-        try {
-            return this._query[action](payload, this.state);
-        }
-        catch (error) {
-            return null;
-        }
-    }
     update(action, payload) {
         try {
             this.state = this._update[action](payload, this.state);
-            this._eventUpdated.forEach((e) => {
-                e(this.state);
+            this._callbacks.forEach((cb) => {
+                cb(this.state);
             });
         }
         catch (error) {
         }
     }
     subscribe(callback) {
-        this._eventUpdated.add(callback);
+        this._callbacks.add(callback);
     }
     unsubscribe(callback) {
-        this._eventUpdated.delete(callback);
+        this._callbacks.delete(callback);
     }
 }

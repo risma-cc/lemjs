@@ -7,12 +7,6 @@ export interface ModelInit<T> {
      */
     state: T;
     /*!
-     * query: Defines functions of query actions.
-     */
-    query?: {
-        [x: string]: (payload: any, state: T) => any;
-    };
-    /*!
      * update: Defines functions of update actions whose returning values will be set to the state.
      */
     update?: {
@@ -27,10 +21,6 @@ export interface Model<T> {
      * getState: Returns the values of state
      */
     get: () => T;
-    /*!
-     * query: Dispatches a synchronous action to query the state.
-     */
-    query: (action: string, payload?: any) => any;
     /*!
      * update: Dispatches a synchronous action to update the state.
      */

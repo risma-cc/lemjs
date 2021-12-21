@@ -8,11 +8,6 @@ export interface ModelInit<T> {
     state: T;
 
     /*!
-     * query: Defines functions of query actions.
-     */
-    query?: { [x: string]: (payload: any, state: T) => any };
-
-    /*!
      * update: Defines functions of update actions whose returning values will be set to the state.
      */
     update?: { [x: string]: (payload: any, state: T) => T };
@@ -26,11 +21,6 @@ export interface Model<T> {
      * getState: Returns the values of state
      */
     get: () => T;
-
-    /*!
-     * query: Dispatches a synchronous action to query the state.
-     */
-    query: (action: string, payload?: any) => any;
 
     /*!
      * update: Dispatches a synchronous action to update the state.
@@ -57,44 +47,34 @@ export function makeModel<T>(init: ModelInit<T>): Model<T> {
 
 class ModelImpl<T> implements Model<T> {
     state: T;
-    private _query: any;
     private _update: any;
-    private _eventUpdated: Set<(state: T) => void>;
+    private _callbacks: Set<(state: T) => void>;
 
     constructor(init: ModelInit<T>) {
         this.state = init.state;
-        this._query = init.query;
         this._update = init.update;
-        this._eventUpdated = new Set<(state: T) => void>();
+        this._callbacks = new Set<(state: T) => void>();
     }
 
     get() {
         return this.state;
     }
 
-    query(action: string, payload?: any): any {
-        try {
-            return this._query[action](payload, this.state);
-        } catch (error) {
-            return null;
-        }
-    }
-
     update(action: string, payload?: any) {
         try {
             this.state = this._update[action](payload, this.state);
-            this._eventUpdated.forEach((e) => {
-                e(this.state);
+            this._callbacks.forEach((cb) => {
+                cb(this.state);
             });
         } catch (error) {
         }
     }
 
     subscribe(callback: (state: T) => void) {
-        this._eventUpdated.add(callback);
+        this._callbacks.add(callback);
     }
 
     unsubscribe(callback: (state: T) => void) {
-        this._eventUpdated.delete(callback);
+        this._callbacks.delete(callback);
     }
 }
