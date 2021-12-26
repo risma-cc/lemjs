@@ -38,20 +38,27 @@ https://github.com/risma-cc/lemjs
 
 ### 使用数据模型
 #### React函数组件，使用Hooks
+建议封装一个公共的useModel方法使用。
 
-    export default () => {
-        const [ state, setState ] = React.useState(myModel.get());
+    export function useModel<T>(model: Model<T>): T {
+        const [state, setState] = useState(model.get());
 
         useEffect(() => {
-            myModel.subscribe(setState);
+            model.subscribe(setState);
             return () => {
-                myModel.unsubscribe(setState);
-            }
-        }, [ state ]);
+                model.unsubscribe(setState);
+            };
+        }, [state]);
+
+        return state;
+    }
+
+    export default () => {
+        const my = useModel(myModel);
 
         return (
             <div>
-                <h1>a is {state.a}</h1>
+                <h1>a is {my.a}</h1>
                 /* 调用模型的update方法进行数据访问与处理。 */
                 <a onClick={() => myModel.update('add', 1)}></a>
             </div>

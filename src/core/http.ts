@@ -272,8 +272,10 @@ function __mergeConfig(cfg1: HttpConfig | undefined, cfg2: HttpConfig | undefine
     if (!cfg1) {
         return cfg2;
     }
+    const { headers: h1, ...c1 } = cfg1;
+    const { headers: h2, ...c2 } = cfg2;
     return {
-        ...cfg1, ...cfg2,
-        headers: { ...cfg1.headers, ...cfg2.headers }
+        ...c1, ...c2,
+        headers: { ...h1, ...h2 }
     } as HttpConfig;
 }
