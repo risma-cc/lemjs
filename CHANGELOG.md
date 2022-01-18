@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## V0.4.0
+### Features
+- HTTP: HTTP request with abort controller
+
 ### Changed
 - HTTP: Refactor HttpClient
 

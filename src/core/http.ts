@@ -26,15 +26,6 @@ export interface HttpRequest {
     config?: HttpConfig | (() => HttpConfig),
 }
 
-/*!
- * HttpRequestOptions: HTTP request with all optional properties.
- */
-export interface HttpRequestOptions {
-    url?: string,
-    params?: HttpParams | (() => HttpParams),
-    config?: HttpConfig | (() => HttpConfig),
-};
-
 export type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
 export type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
 export type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
@@ -84,7 +75,9 @@ export async function httpRequest(request: HttpRequest) {
     if (queryParams.length > 0) {
         url += '?' + queryParams;
     }
-    const resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
+    // Config
+    let config = (typeof request.config == 'function') ? request.config() : request.config;
+    const resp = await fetch(url, config);
 
     // Check HTTP status and parse response
     if (resp.status >= 200 && resp.status < 300) {
@@ -145,6 +138,35 @@ export async function httpPostJson(url: string, params?: HttpParams, config?: Ht
         }),
     });
 }
+
+/*!
+ * HttpRequestController: HTTP rquest with abort controller
+ */
+export class HttpRequestController implements HttpRequest {
+    url: string;
+    params: HttpParams | (() => HttpParams) | undefined;
+    config: HttpConfig | (() => HttpConfig);
+    controller = new AbortController();
+
+    constructor(req: HttpRequest) {
+        this.url = req.url;
+        this.params = req.params;
+        if (typeof req.config === 'function') {
+            const configProc = req.config;
+            const signal = this.controller.signal;
+            this.config = () => {
+                return { ...configProc(), signal: signal };
+            }
+        } else {
+            this.config = { ...req.config, signal: this.controller.signal };
+        }
+    }
+
+    abort() {
+        this.controller.abort();
+    }
+}
+
 
 /*!
  * HttpClient: Definition of an HTTP client.
@@ -228,7 +250,7 @@ async function __request(client: HttpClient, api: HttpAPI, config: HttpConfig) {
         }
         let data = await httpRequest(request);
         return await __response(client, request, data, api.response);
-    } catch (error) {
+    } catch (error: any) {
         return Promise.reject(await __error(client, request, error, api.error));
     }
 }
@@ -260,7 +282,7 @@ async function __error(
             }
         }
         return errorHandler ? await errorHandler(error, request) : error;
-    } catch(err) {
+    } catch (err) {
         return err;
     }
 }

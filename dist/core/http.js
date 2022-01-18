@@ -1,4 +1,3 @@
-;
 /*!
  * JsonBody: Converts an object to a JSON string
  */
@@ -43,7 +42,9 @@ export async function httpRequest(request) {
     if (queryParams.length > 0) {
         url += '?' + queryParams;
     }
-    const resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
+    // Config
+    let config = (typeof request.config == 'function') ? request.config() : request.config;
+    const resp = await fetch(url, config);
     // Check HTTP status and parse response
     if (resp.status >= 200 && resp.status < 300) {
         const contentType = resp.headers.get('Content-Type');
@@ -99,6 +100,32 @@ export async function httpPostJson(url, params, config) {
             headers: { 'Content-Type': 'application/json' }
         }),
     });
+}
+/*!
+ * HttpRequestController: HTTP rquest with abort controller
+ */
+export class HttpRequestController {
+    url;
+    params;
+    config;
+    controller = new AbortController();
+    constructor(req) {
+        this.url = req.url;
+        this.params = req.params;
+        if (typeof req.config === 'function') {
+            const configProc = req.config;
+            const signal = this.controller.signal;
+            this.config = () => {
+                return { ...configProc(), signal: signal };
+            };
+        }
+        else {
+            this.config = { ...req.config, signal: this.controller.signal };
+        }
+    }
+    abort() {
+        this.controller.abort();
+    }
 }
 export async function httpClientGet(client, api) {
     return __request(client, api, { method: 'GET' });

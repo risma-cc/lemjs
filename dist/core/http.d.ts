@@ -24,14 +24,6 @@ export interface HttpRequest {
     params?: HttpParams | (() => HttpParams);
     config?: HttpConfig | (() => HttpConfig);
 }
-/*!
- * HttpRequestOptions: HTTP request with all optional properties.
- */
-export interface HttpRequestOptions {
-    url?: string;
-    params?: HttpParams | (() => HttpParams);
-    config?: HttpConfig | (() => HttpConfig);
-}
 export declare type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
 export declare type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
 export declare type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
@@ -59,6 +51,17 @@ export declare function httpPost(url: string, params?: HttpParams, config?: Http
  * httpPostJson: Send an HTTP POST request with JSON body and return a response
  */
 export declare function httpPostJson(url: string, params?: HttpParams, config?: HttpConfig): Promise<any>;
+/*!
+ * HttpRequestController: HTTP rquest with abort controller
+ */
+export declare class HttpRequestController implements HttpRequest {
+    url: string;
+    params: HttpParams | (() => HttpParams) | undefined;
+    config: HttpConfig | (() => HttpConfig);
+    controller: AbortController;
+    constructor(req: HttpRequest);
+    abort(): void;
+}
 /*!
  * HttpClient: Definition of an HTTP client.
  */
