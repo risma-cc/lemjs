@@ -1,9 +1,7 @@
 /*!
  * HttpParams: Similar to URLSearchParams.
  */
-export declare type HttpParams = {
-    [x: string]: string;
-};
+export declare type HttpParams = Record<string, string>;
 /*!
  * HttpConfig: Configuration options of HTTP request.
  */
@@ -21,20 +19,20 @@ export interface FormElement {
  */
 export interface HttpRequest {
     url: string;
-    params?: HttpParams | (() => HttpParams);
-    config?: HttpConfig | (() => HttpConfig);
+    params?: HttpParams | (() => HttpParams | undefined);
+    config?: HttpConfig | (() => HttpConfig | undefined);
 }
 export declare type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
 export declare type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
 export declare type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
 /*!
- * JsonBody: Converts an object to a JSON string
+ * jsonBody: Converts an object to an JSON string
  */
-export declare function JsonBody(value: any): string;
+export declare function jsonBody(value: any): string;
 /*!
- * FormBody: Converts elements to a FormData, e.g. file
+ * formBody: Converts elements to a FormData, e.g. file
  */
-export declare function FormBody(elements: FormElement[]): FormData;
+export declare function formBody(elements: FormElement[]): FormData;
 /*!
  * httpRequest: Send an HTTP request and return a response
  */
@@ -56,8 +54,8 @@ export declare function httpPostJson(url: string, params?: HttpParams, config?: 
  */
 export declare class HttpRequestController implements HttpRequest {
     url: string;
-    params: HttpParams | (() => HttpParams) | undefined;
-    config: HttpConfig | (() => HttpConfig);
+    params: HttpParams | (() => HttpParams | undefined) | undefined;
+    config: HttpConfig | (() => HttpConfig | undefined);
     controller: AbortController;
     constructor(req: HttpRequest);
     abort(): void;
@@ -67,8 +65,8 @@ export declare class HttpRequestController implements HttpRequest {
  */
 export interface HttpClient {
     baseURL?: string;
-    defaultParams?: HttpParams | (() => HttpParams);
-    defaultConfig?: HttpConfig | (() => HttpConfig);
+    defaultParams?: HttpParams | (() => HttpParams | undefined);
+    defaultConfig?: HttpConfig | (() => HttpConfig | undefined);
     requestInterceptors?: RequestHandler[];
     responseInterceptors?: ResponseHandler[];
     errorInterceptors?: ErrorHandler[];

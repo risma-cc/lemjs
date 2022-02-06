@@ -1,13 +1,13 @@
 /*!
- * JsonBody: Converts an object to a JSON string
+ * jsonBody: Converts an object to an JSON string
  */
-export function JsonBody(value) {
+export function jsonBody(value) {
     return JSON.stringify(value);
 }
 /*!
- * FormBody: Converts elements to a FormData, e.g. file
+ * formBody: Converts elements to a FormData, e.g. file
  */
-export function FormBody(elements) {
+export function formBody(elements) {
     let body = new FormData;
     elements.forEach(e => {
         if (typeof e.value == 'string') {
@@ -44,29 +44,34 @@ export async function httpRequest(request) {
     }
     // Config
     let config = (typeof request.config == 'function') ? request.config() : request.config;
-    const resp = await fetch(url, config);
-    // Check HTTP status and parse response
-    if (resp.status >= 200 && resp.status < 300) {
-        const contentType = resp.headers.get('Content-Type');
-        if (contentType != null) {
-            if (contentType.indexOf('text') > -1) {
-                return await resp.text();
+    try {
+        const resp = await fetch(url, config);
+        // Check HTTP status and parse response
+        if (resp.status >= 200 && resp.status < 300) {
+            const contentType = resp.headers.get('Content-Type');
+            if (contentType != null) {
+                if (contentType.indexOf('text') > -1) {
+                    return await resp.text();
+                }
+                if (contentType.indexOf('form') > -1) {
+                    return await resp.formData();
+                }
+                if (contentType.indexOf('json') > -1) {
+                    return await resp.json();
+                }
+                return await resp.blob();
             }
-            if (contentType.indexOf('form') > -1) {
-                return await resp.formData();
-            }
-            if (contentType.indexOf('json') > -1) {
-                return await resp.json();
-            }
-            return await resp.blob();
+            return await resp.text();
         }
-        return await resp.text();
+        if (resp.status === 301 || resp.status === 302) { // Redirect
+            const l = resp.headers.get('Location');
+            window.location.assign(l == null ? '' : l);
+        }
+        return Promise.reject(Error(resp.statusText));
     }
-    if (resp.status === 301 || resp.status === 302) { // Redirect
-        const l = resp.headers.get('Location');
-        window.location.assign(l == null ? '' : l);
+    catch (err) {
+        return Promise.reject(err);
     }
-    return Promise.reject(Error(resp.statusText));
 }
 /*!
  * httpGet: Send an HTTP GET request and return a response
