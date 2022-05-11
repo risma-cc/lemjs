@@ -174,17 +174,22 @@ async function __request(client, api, config) {
         let data = await httpRequest(request);
         return await __response(client, request, data, api.response);
     }
-    catch (error) {
-        return Promise.reject(await __error(client, request, error, api.error));
+    catch (err) {
+        return Promise.reject(await __error(client, request, err, api.error));
     }
 }
 async function __response(client, request, data, responseHandler) {
-    if (client.responseInterceptors) {
-        for (let interceptor of client.responseInterceptors) {
-            data = await interceptor(data, request);
+    try {
+        if (client.responseInterceptors) {
+            for (let interceptor of client.responseInterceptors) {
+                data = await interceptor(data, request);
+            }
         }
+        return responseHandler ? await responseHandler(data, request) : data;
     }
-    return responseHandler ? await responseHandler(data, request) : data;
+    catch (err) {
+        return Promise.reject(err);
+    }
 }
 async function __error(client, request, error, errorHandler) {
     try {
