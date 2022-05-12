@@ -67,9 +67,9 @@ export interface HttpClient {
     baseURL?: string;
     defaultParams?: HttpParams | (() => HttpParams | undefined);
     defaultConfig?: HttpConfig | (() => HttpConfig | undefined);
-    requestInterceptors?: RequestHandler[];
-    responseInterceptors?: ResponseHandler[];
-    errorInterceptors?: ErrorHandler[];
+    requestInterceptor?: RequestHandler;
+    responseInterceptor?: ResponseHandler;
+    errorInterceptor?: ErrorHandler;
 }
 /*!
  * HttpAPI: Definition of an HTTP API.

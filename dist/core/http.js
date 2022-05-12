@@ -44,40 +44,35 @@ export async function httpRequest(request) {
     }
     // Config
     let config = (typeof request.config == 'function') ? request.config() : request.config;
-    try {
-        const resp = await fetch(url, config);
-        // Check HTTP status and parse response
-        if (resp.status >= 200 && resp.status < 300) {
-            const contentType = resp.headers.get('Content-Type');
-            if (contentType != null) {
-                if (contentType.indexOf('text') > -1) {
-                    return await resp.text();
-                }
-                if (contentType.indexOf('form') > -1) {
-                    return await resp.formData();
-                }
-                if (contentType.indexOf('json') > -1) {
-                    return await resp.json();
-                }
-                return await resp.blob();
+    const resp = await fetch(url, config);
+    // Check HTTP status and parse response
+    if (resp.status >= 200 && resp.status < 300) {
+        const contentType = resp.headers.get('Content-Type');
+        if (contentType != null) {
+            if (contentType.indexOf('text') > -1) {
+                return await resp.text();
             }
-            return await resp.text();
+            if (contentType.indexOf('form') > -1) {
+                return await resp.formData();
+            }
+            if (contentType.indexOf('json') > -1) {
+                return await resp.json();
+            }
+            return await resp.blob();
         }
-        if (resp.status === 301 || resp.status === 302) { // Redirect
-            const l = resp.headers.get('Location');
-            window.location.assign(l == null ? '' : l);
-        }
-        return Promise.reject(Error(resp.statusText));
+        return await resp.text();
     }
-    catch (err) {
-        return Promise.reject(err);
+    if (resp.status === 301 || resp.status === 302) { // Redirect
+        const l = resp.headers.get('Location');
+        window.location.assign(l == null ? '' : l);
     }
+    throw Error(resp.statusText);
 }
 /*!
  * httpGet: Send an HTTP GET request and return a response
  */
-export async function httpGet(url, params, config) {
-    return await httpRequest({
+export function httpGet(url, params, config) {
+    return httpRequest({
         url: url,
         params: params,
         config: { ...config, method: 'GET' },
@@ -86,8 +81,8 @@ export async function httpGet(url, params, config) {
 /*!
  * httpPost: Send an HTTP POST request and return a response
  */
-export async function httpPost(url, params, config) {
-    return await httpRequest({
+export function httpPost(url, params, config) {
+    return httpRequest({
         url: url,
         params: params,
         config: { ...config, method: 'POST' },
@@ -96,8 +91,8 @@ export async function httpPost(url, params, config) {
 /*!
  * httpPostJson: Send an HTTP POST request with JSON body and return a response
  */
-export async function httpPostJson(url, params, config) {
-    return await httpRequest({
+export function httpPostJson(url, params, config) {
+    return httpRequest({
         url: url,
         params: params,
         config: __mergeConfig(config, {
@@ -132,13 +127,13 @@ export class HttpRequestController {
         this.controller.abort();
     }
 }
-export async function httpClientGet(client, api) {
+export function httpClientGet(client, api) {
     return __request(client, api, { method: 'GET' });
 }
-export async function httpClientPost(client, api) {
+export function httpClientPost(client, api) {
     return __request(client, api, { method: 'POST' });
 }
-export async function httpClientPostJson(client, api) {
+export function httpClientPostJson(client, api) {
     return __request(client, api, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -155,15 +150,11 @@ async function __request(client, api, config) {
         config: __mergeConfig(__mergeConfig((typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig, (typeof api.config === 'function') ? api.config() : api.config), config)
     };
     try {
-        if (client.requestInterceptors) {
-            for (let interceptor of client.requestInterceptors) {
-                const req = await interceptor(request);
-                if (!req) {
-                    return Promise.reject(await __error(client, request, Error('The request \"' + api.url + '\" was cancelled.'), api.error));
-                }
-                request = req;
-            }
+        const req = client.requestInterceptor && await client.requestInterceptor(request);
+        if (!req) {
+            throw Error('The request \"' + api.url + '\" was cancelled.');
         }
+        request = req;
         // In case of non-production env and mock enabled,
         // if a mock handler is defined, skips HTTP request.
         if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
@@ -175,28 +166,20 @@ async function __request(client, api, config) {
         return await __response(client, request, data, api.response);
     }
     catch (err) {
-        return Promise.reject(await __error(client, request, err, api.error));
+        err = await __error(client, request, err, api.error);
+        throw err;
     }
 }
 async function __response(client, request, data, responseHandler) {
-    try {
-        if (client.responseInterceptors) {
-            for (let interceptor of client.responseInterceptors) {
-                data = await interceptor(data, request);
-            }
-        }
-        return responseHandler ? await responseHandler(data, request) : data;
+    if (client.responseInterceptor) {
+        data = await client.responseInterceptor(data, request);
     }
-    catch (err) {
-        return Promise.reject(err);
-    }
+    return responseHandler ? await responseHandler(data, request) : data;
 }
 async function __error(client, request, error, errorHandler) {
     try {
-        if (client.errorInterceptors) {
-            for (let interceptor of client.errorInterceptors) {
-                error = await interceptor(error, request);
-            }
+        if (client.errorInterceptor) {
+            error = await client.errorInterceptor(error, request);
         }
         return errorHandler ? await errorHandler(error, request) : error;
     }

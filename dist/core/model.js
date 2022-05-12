@@ -17,13 +17,12 @@ class ModelImpl {
         return this.state;
     }
     update(action, payload) {
-        try {
-            this.state = this._update[action](payload, this.state);
+        const f = this._update[action];
+        if (typeof f === 'function') {
+            this.state = (f) && f(payload, this.state);
             this._callbacks.forEach((cb) => {
                 cb(this.state);
             });
-        }
-        catch (error) {
         }
     }
     subscribe(callback) {

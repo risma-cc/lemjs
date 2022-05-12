@@ -61,12 +61,12 @@ class ModelImpl<T> implements Model<T> {
     }
 
     update(action: string, payload?: any) {
-        try {
-            this.state = this._update[action](payload, this.state);
+        const f = this._update[action];
+        if (typeof f === 'function') {
+            this.state = (f ) && f(payload, this.state);
             this._callbacks.forEach((cb) => {
                 cb(this.state);
             });
-        } catch (error) {
         }
     }
 
