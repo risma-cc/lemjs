@@ -22,9 +22,6 @@ export interface HttpRequest {
     params?: HttpParams | (() => HttpParams | undefined);
     config?: HttpConfig | (() => HttpConfig | undefined);
 }
-export declare type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
-export declare type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
-export declare type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
 /*!
  * jsonBody: Converts an object to an JSON string
  */
@@ -56,25 +53,17 @@ export declare class HttpRequestController implements HttpRequest {
     url: string;
     params: HttpParams | (() => HttpParams | undefined) | undefined;
     config: HttpConfig | (() => HttpConfig | undefined);
-    controller: AbortController;
+    private controller;
     constructor(req: HttpRequest);
     abort(): void;
 }
 /*!
- * HttpClient: Definition of an HTTP client.
+ * HttpRequestHanlders: Definition of HTTP request handlers.
  */
-export interface HttpClient {
-    baseURL?: string;
-    defaultParams?: HttpParams | (() => HttpParams | undefined);
-    defaultConfig?: HttpConfig | (() => HttpConfig | undefined);
-    requestInterceptor?: RequestHandler;
-    responseInterceptor?: ResponseHandler;
-    errorInterceptor?: ErrorHandler;
-}
-/*!
- * HttpAPI: Definition of an HTTP API.
- */
-export interface HttpAPI extends HttpRequest {
+export declare type RequestHandler = (request: HttpRequest) => boolean;
+export declare type ResponseHandler = ((data: any, request: HttpRequest) => any) | ((data: any, request: HttpRequest) => Promise<any>);
+export declare type ErrorHandler = ((error: any, request: HttpRequest) => any) | ((error: any, request: HttpRequest) => Promise<any>);
+export interface HttpRequestHanlders {
     /*!
      * response: Process response data and return them.
      */
@@ -89,6 +78,31 @@ export interface HttpAPI extends HttpRequest {
      */
     mock?: (request: HttpRequest) => any;
 }
-export declare function httpClientGet(client: HttpClient, api: HttpAPI): Promise<any>;
-export declare function httpClientPost(client: HttpClient, api: HttpAPI): Promise<any>;
-export declare function httpClientPostJson(client: HttpClient, api: HttpAPI): Promise<any>;
+/*!
+ * HttpClientRequest: Definition of HTTP client request.
+ */
+export declare class HttpClientRequest extends HttpRequestController implements HttpRequestHanlders {
+    client: HttpClient;
+    response?: ResponseHandler;
+    error?: ErrorHandler;
+    mock?: (request: HttpRequest) => any;
+    constructor(client: HttpClient, request: HttpRequest, handlers?: HttpRequestHanlders);
+    send(): Promise<any>;
+    private __response;
+    private __error;
+}
+/*!
+ * HttpClient: Definition of an HTTP client.
+ */
+export interface HttpClient {
+    baseURL?: string;
+    defaultParams?: HttpParams | (() => HttpParams | undefined);
+    defaultConfig?: HttpConfig | (() => HttpConfig | undefined);
+    requestInterceptor?: RequestHandler;
+    responseInterceptor?: ResponseHandler;
+    errorInterceptor?: ErrorHandler;
+}
+export declare function httpClientGet(client: HttpClient, request: HttpRequest, handlers?: HttpRequestHanlders): HttpClientRequest;
+export declare function httpClientPost(client: HttpClient, request: HttpRequest, handlers?: HttpRequestHanlders): HttpClientRequest;
+export declare function httpClientPostJson(client: HttpClient, request: HttpRequest, handlers?: HttpRequestHanlders): HttpClientRequest;
+export declare function httpClientRequest(client: HttpClient, request: HttpRequest, config?: HttpConfig, handlers?: HttpRequestHanlders): HttpClientRequest;

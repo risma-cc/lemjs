@@ -127,65 +127,89 @@ export class HttpRequestController {
         this.controller.abort();
     }
 }
-export function httpClientGet(client, api) {
-    return __request(client, api, { method: 'GET' });
+/*!
+ * HttpClientRequest: Definition of HTTP client request.
+ */
+export class HttpClientRequest extends HttpRequestController {
+    client;
+    response;
+    error;
+    mock;
+    constructor(client, request, handlers) {
+        super(request);
+        this.client = client;
+        this.response = handlers?.response;
+        this.error = handlers?.error;
+        this.mock = handlers?.mock;
+    }
+    async send() {
+        try {
+            if (this.client.requestInterceptor) {
+                if (!this.client.requestInterceptor(this)) {
+                    throw 'The request \"' + this.url + '\" was cancelled in interceptor.';
+                }
+            }
+            // In case of non-production env and mock enabled,
+            // if a mock handler is defined, skips HTTP request.
+            if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+                if (this.mock) {
+                    return this.__response(this.mock(this));
+                }
+            }
+            return this.__response(await httpRequest(this));
+        }
+        catch (err) {
+            throw await this.__error(err);
+        }
+    }
+    async __response(data) {
+        try {
+            data = this.client.responseInterceptor
+                ? await this.client.responseInterceptor(data, this)
+                : data;
+            return this.response
+                ? await this.response(data, this)
+                : data;
+        }
+        catch (err) {
+            throw await this.__error(err);
+        }
+    }
+    async __error(error) {
+        try {
+            error = this.client.errorInterceptor
+                ? await this.client.errorInterceptor(error, this)
+                : error;
+            return this.error
+                ? this.error(error, this)
+                : error;
+        }
+        catch (err) {
+            return err;
+        }
+    }
 }
-export function httpClientPost(client, api) {
-    return __request(client, api, { method: 'POST' });
+export function httpClientGet(client, request, handlers) {
+    return httpClientRequest(client, request, { method: 'GET' }, handlers);
 }
-export function httpClientPostJson(client, api) {
-    return __request(client, api, {
+export function httpClientPost(client, request, handlers) {
+    return httpClientRequest(client, request, { method: 'POST' }, handlers);
+}
+export function httpClientPostJson(client, request, handlers) {
+    return httpClientRequest(client, request, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
-    });
+    }, handlers);
 }
-async function __request(client, api, config) {
-    // Make a request object
-    let request = {
-        url: client.baseURL + api.url,
+export function httpClientRequest(client, request, config, handlers) {
+    return new HttpClientRequest(client, {
+        url: client.baseURL + request.url,
         params: {
             ...(typeof client.defaultParams === 'function') ? client.defaultParams() : client.defaultParams,
-            ...(typeof api.params === 'function') ? api.params() : api.params
+            ...(typeof request.params === 'function') ? request.params() : request.params
         },
-        config: __mergeConfig(__mergeConfig((typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig, (typeof api.config === 'function') ? api.config() : api.config), config)
-    };
-    try {
-        const req = client.requestInterceptor && await client.requestInterceptor(request);
-        if (!req) {
-            throw Error('The request \"' + api.url + '\" was cancelled.');
-        }
-        request = req;
-        // In case of non-production env and mock enabled,
-        // if a mock handler is defined, skips HTTP request.
-        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-            if (api.mock) {
-                return await __response(client, request, api.mock, api.response);
-            }
-        }
-        let data = await httpRequest(request);
-        return await __response(client, request, data, api.response);
-    }
-    catch (err) {
-        err = await __error(client, request, err, api.error);
-        throw err;
-    }
-}
-async function __response(client, request, data, responseHandler) {
-    if (client.responseInterceptor) {
-        data = await client.responseInterceptor(data, request);
-    }
-    return responseHandler ? await responseHandler(data, request) : data;
-}
-async function __error(client, request, error, errorHandler) {
-    try {
-        if (client.errorInterceptor) {
-            error = await client.errorInterceptor(error, request);
-        }
-        return errorHandler ? await errorHandler(error, request) : error;
-    }
-    catch (err) {
-        return err;
-    }
+        config: __mergeConfig(__mergeConfig((typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig, (typeof request.config === 'function') ? request.config() : request.config), config)
+    }, handlers);
 }
 function __mergeConfig(cfg1, cfg2) {
     if (!cfg2) {

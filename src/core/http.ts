@@ -26,10 +26,6 @@ export interface HttpRequest {
     config?: HttpConfig | (() => HttpConfig | undefined),
 }
 
-export type RequestHandler = (request: HttpRequest) => (HttpRequest | false | Promise<HttpRequest | false>);
-export type ResponseHandler = (response: any, request: HttpRequest) => (any | Promise<any>);
-export type ErrorHandler = (error: Error, request: HttpRequest) => (Error | Promise<Error>);
-
 /*!
  * jsonBody: Converts an object to an JSON string
  */
@@ -147,7 +143,7 @@ export class HttpRequestController implements HttpRequest {
     url: string;
     params: HttpParams | (() => HttpParams | undefined) | undefined;
     config: HttpConfig | (() => HttpConfig | undefined);
-    controller = new AbortController();
+    private controller = new AbortController();
 
     constructor(req: HttpRequest) {
         this.url = req.url;
@@ -168,23 +164,19 @@ export class HttpRequestController implements HttpRequest {
     }
 }
 
-
 /*!
- * HttpClient: Definition of an HTTP client.
+ * HttpRequestHanlders: Definition of HTTP request handlers.
  */
-export interface HttpClient {
-    baseURL?: string,
-    defaultParams?: HttpParams | (() => HttpParams | undefined),
-    defaultConfig?: HttpConfig | (() => HttpConfig | undefined),
-    requestInterceptor?: RequestHandler,
-    responseInterceptor?: ResponseHandler,
-    errorInterceptor?: ErrorHandler,
-}
 
-/*!
- * HttpAPI: Definition of an HTTP API.
- */
-export interface HttpAPI extends HttpRequest {
+export type RequestHandler = (request: HttpRequest) => boolean;
+export type ResponseHandler =
+    ((data: any, request: HttpRequest) => any) |
+    ((data: any, request: HttpRequest) => Promise<any>);
+export type ErrorHandler =
+    ((error: any, request: HttpRequest) => any) |
+    ((error: any, request: HttpRequest) => Promise<any>);
+
+export interface HttpRequestHanlders {
     /*!
      * response: Process response data and return them.
      */
@@ -202,83 +194,128 @@ export interface HttpAPI extends HttpRequest {
     mock?: (request: HttpRequest) => any,
 }
 
-export function httpClientGet(client: HttpClient, api: HttpAPI) {
-    return __request(client, api, { method: 'GET' });
+/*!
+ * HttpClientRequest: Definition of HTTP client request.
+ */
+
+export class HttpClientRequest extends HttpRequestController implements HttpRequestHanlders {
+    client: HttpClient;
+    response?: ResponseHandler;
+    error?: ErrorHandler;
+    mock?: (request: HttpRequest) => any;
+
+    constructor(client: HttpClient, request: HttpRequest, handlers?: HttpRequestHanlders) {
+        super(request);
+        this.client = client;
+        this.response = handlers?.response;
+        this.error = handlers?.error;
+        this.mock = handlers?.mock;
+    }
+
+    async send() {
+        try {
+            if (this.client.requestInterceptor) {
+                if (!this.client.requestInterceptor(this)) {
+                    throw 'The request \"' + this.url + '\" was cancelled in interceptor.';
+                }
+            }
+
+            // In case of non-production env and mock enabled,
+            // if a mock handler is defined, skips HTTP request.
+            if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
+                if (this.mock) {
+                    return this.__response(this.mock(this));
+                }
+            }
+            return this.__response(await httpRequest(this));
+        } catch (err: any) {
+            throw await this.__error(err);
+        }
+    }
+
+    private async __response(data: any) {
+        try {
+            data = this.client.responseInterceptor
+                ? await this.client.responseInterceptor(data, this)
+                : data;
+            return this.response
+                ? await this.response(data, this)
+                : data;
+        } catch (err: any) {
+            throw await this.__error(err);
+        }
+    }
+    
+    private async __error(error: any) {
+        try {
+            error = this.client.errorInterceptor
+                ? await this.client.errorInterceptor(error, this)
+                : error;
+            return this.error
+                ? this.error(error, this)
+                : error;
+        } catch (err) {
+            return err;
+        }
+    }    
 }
 
-export function httpClientPost(client: HttpClient, api: HttpAPI) {
-    return __request(client, api, { method: 'POST' });
+/*!
+ * HttpClient: Definition of an HTTP client.
+ */
+export interface HttpClient {
+    baseURL?: string,
+    defaultParams?: HttpParams | (() => HttpParams | undefined),
+    defaultConfig?: HttpConfig | (() => HttpConfig | undefined),
+    requestInterceptor?: RequestHandler,
+    responseInterceptor?: ResponseHandler,
+    errorInterceptor?: ErrorHandler,
 }
 
-export function httpClientPostJson(client: HttpClient, api: HttpAPI) {
-    return __request(client, api, {
+export function httpClientGet(
+    client: HttpClient,
+    request: HttpRequest,
+    handlers?: HttpRequestHanlders
+) {
+    return httpClientRequest(client, request, { method: 'GET' }, handlers);
+}
+
+export function httpClientPost(
+    client: HttpClient,
+    request: HttpRequest,
+    handlers?: HttpRequestHanlders
+) {
+    return httpClientRequest(client, request, { method: 'POST' }, handlers);
+}
+
+export function httpClientPostJson(
+    client: HttpClient,
+    request: HttpRequest,
+    handlers?: HttpRequestHanlders
+) {
+    return httpClientRequest(client, request, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
-    });
+    }, handlers);
 }
 
-async function __request(client: HttpClient, api: HttpAPI, config: HttpConfig) {
-    // Make a request object
-    let request: HttpRequest = {
-        url: client.baseURL + api.url,
+export function httpClientRequest(
+    client: HttpClient,
+    request: HttpRequest,
+    config?: HttpConfig,
+    handlers?: HttpRequestHanlders
+) {
+    return new HttpClientRequest(client, {
+        url: client.baseURL + request.url,
         params: {
             ...(typeof client.defaultParams === 'function') ? client.defaultParams() : client.defaultParams,
-            ...(typeof api.params === 'function') ? api.params() : api.params
+            ...(typeof request.params === 'function') ? request.params() : request.params
         },
         config: __mergeConfig(__mergeConfig(
             (typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig,
-            (typeof api.config === 'function') ? api.config() : api.config
+            (typeof request.config === 'function') ? request.config() : request.config
         ), config)
-    }
-
-    try {
-        const req = client.requestInterceptor && await client.requestInterceptor(request)
-        if (!req) {
-            throw Error('The request \"' + api.url + '\" was cancelled.');
-        }
-        request = req;
-
-        // In case of non-production env and mock enabled,
-        // if a mock handler is defined, skips HTTP request.
-        if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-            if (api.mock) {
-                return await __response(client, request, api.mock, api.response);
-            }
-        }
-        let data = await httpRequest(request);
-        return await __response(client, request, data, api.response);
-    } catch (err: any) {
-        err = await __error(client, request, err, api.error)
-        throw err;
-    }
-}
-
-async function __response(
-    client: HttpClient,
-    request: HttpRequest,
-    data: any,
-    responseHandler?: ResponseHandler
-) {
-    if (client.responseInterceptor) {
-        data = await client.responseInterceptor(data, request);
-    }
-    return responseHandler ? await responseHandler(data, request) : data;
-}
-
-async function __error(
-    client: HttpClient,
-    request: HttpRequest,
-    error: Error,
-    errorHandler?: ErrorHandler
-) {
-    try {
-        if (client.errorInterceptor) {
-            error = await client.errorInterceptor(error, request);
-        }
-        return errorHandler ? await errorHandler(error, request) : error;
-    } catch (err) {
-        return err;
-    }
+    }, handlers);
 }
 
 function __mergeConfig(cfg1: HttpConfig | undefined, cfg2: HttpConfig | undefined) {
