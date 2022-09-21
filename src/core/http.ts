@@ -1,30 +1,42 @@
-import {
-    FormElement,
-    HttpRequest,
-    HttpAPI,
-    HttpClient,
-    HttpClientInit,
-    HttpConfig,
-    HttpParams,
-    HttpRequestOptions,
-    RequestHandler,
-    ResponseHandler,
-    ErrorHandler,
-    ResponseAsyncHandler,
-    ErrorAsyncHandler,
-} from '../index';
+/*!
+ * HttpParams: Similar to URLSearchParams.
+ */
+export type HttpParams = Record<string, string>;
 
 /*!
- * JsonBody: Converts an object to a JSON string
+ * HttpConfig: Configuration options of HTTP request.
  */
-export function JsonBody(data: object): string {
-    return JSON.stringify(data);
+export type HttpConfig = RequestInit;
+
+/*!
+ * FormElement: Element in form data
+ */
+export interface FormElement {
+    name: string,
+    value: string | Blob,
+    fileName?: string,
 }
 
 /*!
- * FormBody: Converts elements to a FormData, e.g. file
+ * HttpRequest: HTTP rquest with a required url property.
  */
-export function FormBody(elements: FormElement[]): FormData {
+export interface HttpRequest {
+    url: string,
+    params?: HttpParams | (() => HttpParams | undefined),
+    config?: HttpConfig | (() => HttpConfig | undefined),
+}
+
+/*!
+ * jsonBody: Converts an object to an JSON string
+ */
+export function jsonBody(value: any): string {
+    return JSON.stringify(value);
+}
+
+/*!
+ * formBody: Converts elements to a FormData, e.g. file
+ */
+export function formBody(elements: FormElement[]): FormData {
     let body = new FormData;
     elements.forEach(e => {
         if (typeof e.value == 'string') {
@@ -59,7 +71,10 @@ export async function httpRequest(request: HttpRequest) {
     if (queryParams.length > 0) {
         url += '?' + queryParams;
     }
-    const resp = await fetch(url, (typeof request.config == 'function') ? request.config() : request.config);
+    // Config
+    let config = (typeof request.config == 'function') ? request.config() : request.config;
+
+    const resp = await fetch(url, config);
 
     // Check HTTP status and parse response
     if (resp.status >= 200 && resp.status < 300) {
@@ -82,14 +97,14 @@ export async function httpRequest(request: HttpRequest) {
         const l = resp.headers.get('Location')
         window.location.assign(l == null ? '' : l);
     }
-    return Promise.reject(resp.statusText);
+    throw Error(resp.statusText);
 }
 
 /*!
  * httpGet: Send an HTTP GET request and return a response
  */
-export async function httpGet(url: string, params?: HttpParams, config?: HttpConfig) {
-    return await httpRequest({
+export function httpGet(url: string, params?: HttpParams, config?: HttpConfig) {
+    return httpRequest({
         url: url,
         params: params,
         config: { ...config, method: 'GET' },
@@ -99,141 +114,221 @@ export async function httpGet(url: string, params?: HttpParams, config?: HttpCon
 /*!
  * httpPost: Send an HTTP POST request and return a response
  */
-export async function httpPost(url: string, params?: HttpParams, config?: HttpConfig) {
-    return await httpRequest({
+export function httpPost(url: string, params?: HttpParams, config?: HttpConfig) {
+    return httpRequest({
         url: url,
         params: params,
         config: { ...config, method: 'POST' },
     });
 }
 
-/*！
- * makeHttpClient: Create an HTTP client.
+/*!
+ * httpPostJson: Send an HTTP POST request with JSON body and return a response
  */
-export function makeHttpClient(init: HttpClientInit): HttpClient {
-    return new HttpClientImpl(init);
+export function httpPostJson(url: string, params?: HttpParams, config?: HttpConfig) {
+    return httpRequest({
+        url: url,
+        params: params,
+        config: __mergeConfig(config, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }),
+    });
 }
 
-class HttpClientImpl implements HttpClient {
-    httpAPIs: { [x: string]: HttpAPI };
-    baseURL: string;
-    defaultParams: HttpParams | (() => HttpParams);
-    defaultConfig: HttpConfig | (() => HttpConfig);
-    requestInterceptors?: RequestHandler[];
-    responseInterceptors?: (ResponseHandler | ResponseAsyncHandler)[];
-    errorInterceptors?: (ErrorHandler | ErrorAsyncHandler)[];
+/*!
+ * HttpRequestController: HTTP rquest with abort controller
+ */
+export class HttpRequestController implements HttpRequest {
+    url: string;
+    params: HttpParams | (() => HttpParams | undefined) | undefined;
+    config: HttpConfig | (() => HttpConfig | undefined);
+    private controller = new AbortController();
 
-    constructor(init: HttpClientInit) {
-        this.httpAPIs = init.httpAPIs;
-        this.baseURL = init.baseURL || "";
-        this.defaultParams = init.defaultParams || {};
-        this.defaultConfig = init.defaultConfig || {};
-        this.requestInterceptors = init.requestInterceptors;
-        this.responseInterceptors = init.responseInterceptors;
-        this.errorInterceptors = init.errorInterceptors;
+    constructor(req: HttpRequest) {
+        this.url = req.url;
+        this.params = req.params;
+        if (typeof req.config === 'function') {
+            const configProc = req.config;
+            const signal = this.controller.signal;
+            this.config = () => {
+                return { ...configProc(), signal: signal };
+            }
+        } else {
+            this.config = { ...req.config, signal: this.controller.signal };
+        }
     }
 
-    async fetch(api: string, options?: HttpRequestOptions): Promise<any> {
-        let httpAPI = this.httpAPIs[api];
-        if (!httpAPI) {
-            return Promise.reject('The API \"' + api + '\" does NOT exist');
-        }
+    abort() {
+        this.controller.abort();
+    }
+}
 
-        // Make a request object
-        let request: HttpRequest = {
-            url: this.baseURL + (options?.url ? options.url : httpAPI.url),
-            params: merge(merge(
-                (typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams,
-                (typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params
-            ), (typeof options?.params == 'function') ? options?.params() : options?.params),
-            config: merge(merge(
-                (typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig,
-                (typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config
-            ), (typeof options?.config == 'function') ? options?.config() : options?.config)
-        };
-        // let request: HttpRequest = {
-        //     url: this.baseURL + (options?.url ? options.url : httpAPI.url),
-        //     params: {
-        //         ...((typeof this.defaultParams == 'function') ? this.defaultParams() : this.defaultParams),
-        //         ...((typeof httpAPI.params == 'function') ? httpAPI.params() : httpAPI.params),
-        //         ...((typeof options?.params == 'function') ? options?.params() : options?.params),
-        //     },
-        //     config: {
-        //         ...((typeof this.defaultConfig == 'function') ? this.defaultConfig() : this.defaultConfig),
-        //         ...((typeof httpAPI.config == 'function') ? httpAPI.config() : httpAPI.config),
-        //         ...((typeof options?.config == 'function') ? options?.config() : options?.config),
-        //     }
-        // };
+/*!
+ * HttpRequestHanlders: Definition of HTTP request handlers.
+ */
 
+export type RequestHandler = (request: HttpRequest) => boolean;
+export type ResponseHandler =
+    ((data: any, request: HttpRequest) => any) |
+    ((data: any, request: HttpRequest) => Promise<any>);
+export type ErrorHandler =
+    ((error: any, request: HttpRequest) => any) |
+    ((error: any, request: HttpRequest) => Promise<any>);
+
+export interface HttpRequestHanlders {
+    /*!
+     * response: Process response data and return them.
+     */
+    response?: ResponseHandler,
+
+    /*!
+     * error: Handles error.
+     */
+    error?: ErrorHandler,
+
+    /*!
+     * mock: If defines a mock handler, the API request will skip HTTP request and return the mock response.
+     * When the environment variable NODE_ENV is "production" or MOCK is "none", it'll be ignored.
+     */
+    mock?: (request: HttpRequest) => any,
+}
+
+/*!
+ * HttpClientRequest: Definition of HTTP client request.
+ */
+
+export class HttpClientRequest extends HttpRequestController implements HttpRequestHanlders {
+    client: HttpClient;
+    response?: ResponseHandler;
+    error?: ErrorHandler;
+    mock?: (request: HttpRequest) => any;
+
+    constructor(client: HttpClient, request: HttpRequest, handlers?: HttpRequestHanlders) {
+        super(request);
+        this.client = client;
+        this.response = handlers?.response;
+        this.error = handlers?.error;
+        this.mock = handlers?.mock;
+    }
+
+    async send() {
         try {
-            if (this.requestInterceptors) {
-                for (let interceptor of this.requestInterceptors) {
-                    const req = await interceptor(request);
-                    if (!req) {
-                        return Promise.reject(await this.errorProc(httpAPI, request, 'The API \"' + api + '\" request was cancelled.'));
-                    }
-                    request = req;
+            if (this.client.requestInterceptor) {
+                if (!this.client.requestInterceptor(this)) {
+                    throw 'The request \"' + this.url + '\" was cancelled in interceptor.';
                 }
             }
 
             // In case of non-production env and mock enabled,
             // if a mock handler is defined, skips HTTP request.
             if (process.env.NODE_ENV !== 'production' && process.env.MOCK !== 'none') {
-                const mockHandler = httpAPI['mock'];
-                if (mockHandler != undefined) {
-                    return await this.responseProc(httpAPI, request, mockHandler(request));
+                if (this.mock) {
+                    return this.__response(this.mock(this));
                 }
             }
-            let data = await httpRequest(request);
-            return await this.responseProc(httpAPI, request, data);
-        } catch (error) {
-            return Promise.reject(await this.errorProc(httpAPI, request, error));
+            return this.__response(await httpRequest(this));
+        } catch (err: any) {
+            throw await this.__error(err);
         }
     }
 
-    private async responseProc(api: HttpAPI, request: HttpRequest, data: any) {
-        if (this.responseInterceptors) {
-            for (let interceptor of this.responseInterceptors) {
-                data = await interceptor(data, request);
-            }
-        }
-        const respHanlder = api['response'];
-        if (respHanlder) {
-            data = await respHanlder(data, request);
-        }
-        return data;
-    }
-
-    private async errorProc(api: HttpAPI, request: HttpRequest, error: any) {
+    private async __response(data: any) {
         try {
-            if (this.errorInterceptors) {
-                for (let interceptor of this.errorInterceptors) {
-                    error = await interceptor(error, request);
-                }
-            }
-            const errorHanlder = api['error'];
-            if (errorHanlder) {
-                error = await errorHanlder(error, request);
-            }
-            return error;
-        } catch {
-            return error;
+            data = this.client.responseInterceptor
+                ? await this.client.responseInterceptor(data, this)
+                : data;
+            return this.response
+                ? await this.response(data, this)
+                : data;
+        } catch (err: any) {
+            throw await this.__error(err);
         }
     }
+    
+    private async __error(error: any) {
+        try {
+            error = this.client.errorInterceptor
+                ? await this.client.errorInterceptor(error, this)
+                : error;
+            return this.error
+                ? this.error(error, this)
+                : error;
+        } catch (err) {
+            return err;
+        }
+    }    
 }
 
-function merge(obj1: any, obj2: any) {
-    let key;
-    for (key in obj2) {
-        // 如果target(也就是obj1[key])存在，且是对象的话再去调用merge，
-        // 否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
-        // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
-        obj1[key] =
-            obj1[key] &&
-                obj1[key].toString() === "[object Object]" &&
-                (obj2[key] && obj2[key].toString() === "[object Object]")
-                ? merge(obj1[key], obj2[key])
-                : (obj1[key] = obj2[key]);
+/*!
+ * HttpClient: Definition of an HTTP client.
+ */
+export interface HttpClient {
+    baseURL?: string,
+    defaultParams?: HttpParams | (() => HttpParams | undefined),
+    defaultConfig?: HttpConfig | (() => HttpConfig | undefined),
+    requestInterceptor?: RequestHandler,
+    responseInterceptor?: ResponseHandler,
+    errorInterceptor?: ErrorHandler,
+}
+
+export function httpClientGet(
+    client: HttpClient,
+    request: HttpRequest,
+    handlers?: HttpRequestHanlders
+) {
+    return httpClientRequest(client, request, { method: 'GET' }, handlers);
+}
+
+export function httpClientPost(
+    client: HttpClient,
+    request: HttpRequest,
+    handlers?: HttpRequestHanlders
+) {
+    return httpClientRequest(client, request, { method: 'POST' }, handlers);
+}
+
+export function httpClientPostJson(
+    client: HttpClient,
+    request: HttpRequest,
+    handlers?: HttpRequestHanlders
+) {
+    return httpClientRequest(client, request, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }, handlers);
+}
+
+export function httpClientRequest(
+    client: HttpClient,
+    request: HttpRequest,
+    config?: HttpConfig,
+    handlers?: HttpRequestHanlders
+) {
+    return new HttpClientRequest(client, {
+        url: client.baseURL + request.url,
+        params: {
+            ...(typeof client.defaultParams === 'function') ? client.defaultParams() : client.defaultParams,
+            ...(typeof request.params === 'function') ? request.params() : request.params
+        },
+        config: __mergeConfig(__mergeConfig(
+            (typeof client.defaultConfig == 'function') ? client.defaultConfig() : client.defaultConfig,
+            (typeof request.config === 'function') ? request.config() : request.config
+        ), config)
+    }, handlers);
+}
+
+function __mergeConfig(cfg1: HttpConfig | undefined, cfg2: HttpConfig | undefined) {
+    if (!cfg2) {
+        return cfg1;
     }
-    return obj1;
+    if (!cfg1) {
+        return cfg2;
+    }
+    const { headers: h1, ...c1 } = cfg1;
+    const { headers: h2, ...c2 } = cfg2;
+    return {
+        ...c1, ...c2,
+        headers: { ...h1, ...h2 }
+    } as HttpConfig;
 }

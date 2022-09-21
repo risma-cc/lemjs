@@ -16,26 +16,19 @@ https://github.com/risma-cc/lemjs
 
     interface A {
         a: number,
-        answer: string,
+        b: string,
     }
 
     const myModel = makeModel<A>({
         /* 数据初始化 */
         state: {
             a: 0,
-            answer: '',
-        },
-        /* 查询方法 */
-        query: {
-            'ab': (payload: any, state: A): any => {
-                return { a: state.a, b: state.answer };
-            },
+            b: '',
         },
         /* 更新方法 */
         update: {
             'add': (payload: any, state: A): A => {
-                let { x } = payload;
-                return { ...state, a: a + x };
+                return { ...state, a: a + payload as number };
             },
             'set': (payload: any, state: A): A => {
                 return { ...state, ...payload };
@@ -45,22 +38,29 @@ https://github.com/risma-cc/lemjs
 
 ### 使用数据模型
 #### React函数组件，使用Hooks
+建议封装一个公共的useModel方法使用。
 
-    export default () => {
-        const [ state, setState ] = React.useState(myModel.get());
+    export function useModel<T>(model: Model<T>): T {
+        const [state, setState] = useState(model.get());
 
         useEffect(() => {
-            myModel.subscribe(setState);
+            model.subscribe(setState);
             return () => {
-                myModel.unsubscribe(setState);
-            }
-        }, [ state ]);
+                model.unsubscribe(setState);
+            };
+        }, [state]);
+
+        return state;
+    }
+
+    export default () => {
+        const my = useModel(myModel);
 
         return (
             <div>
-                <h1>a is {state.a}</h1>
+                <h1>a is {my.a}</h1>
                 /* 调用模型的update方法进行数据访问与处理。 */
-                <a onClick={() => myModel.update('add', { x: 1 })}></a>
+                <a onClick={() => myModel.update('add', 1)}></a>
             </div>
         );
     }
@@ -92,43 +92,90 @@ https://github.com/risma-cc/lemjs
                 <div>
                     <h1>a is {this.state.a}</h1>
                     /* 调用模型的update方法进行数据访问与处理。 */
-                    <a onClick={() => myModel.update('add', { x: 1 })}></a>
+                    <a onClick={() => myModel.update('add', 1)}></a>
                 </div>
             );
         }
     }
 
 ## HTTP Client
-### 定义HTTP服务接口
+### 定义HTTP服务Client
 
-    const myAPIs = {
-        'hello': {
-            /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
-            url: '/hello/{you}',
+    const myClient: HttpClient = {
+        /* 统一的URL前缀 */
+        baseURL: 'http://a.b.c/api',
+        /* 默认URL参数。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
+        defaultParams: () => {
+            return { 'ver': myVersion };
+        },
+        /* 默认配置选项。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
+        defaultConfig: { },
+        /* 请求拦截器 */
+        requestInterceptor:
+            (request: HttpRequest) => {
+                /* 请求数据处理，可以修改返回的请求数据。如果返回false，则取消请求。 */
+                return request;
+            },
+        /* 响应拦截器 */
+        responseInterceptor:
+            (response: any, request: HttpRequest) => {
+                /* 响应结果处理，可以修改返回的响应数据。 */
+                return response;
+                /* 可以抛出异常终止响应处理，转为错误处理。 */
+                throw new Error('I am tired');
+            },
+        /* 错误拦截器 */
+        errorInterceptor:
+            (error: any, request: HttpRequest) => {
+                /* 错误处理，可以修改返回的错误信息。 */
+                return error;
+            }
+    });
+
+### 创建HTTP API请求
+
+    /* 定义API */
+    const myApi = {
+        /* 请求URL路径，如果HttpClient指定了baseURL，这里只需要指定子路由路径。 */
+        url: '/hello/{you}',
+        /*
+         * 请求URL参数。
+         * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
+         */
+        params: {
+            'you': 'Jack',
+            'color': 'red'
+        },
+        /* 请求配置选项，参考fetch的RequestInit。 */
+        config: {
+            /* HTTP请求方法，缺省为“GET”。 */
+            method: ‘POST’,
             /*
-                * 请求URL参数。
-                * 如果参数名已在url中定义（如示例中“you”），则不会出现在“?”之后的参数中。
-                */
-            params: {
-                'you': 'Jack',
-                'color': 'red'
-            },
-            /* 请求配置选项，参考fetch的RequestInit。 */
-            config: {
-                /* HTTP请求方法，缺省为“GET”。 */
-                method: ‘POST’,
-                /*
-                    * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
-                    * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
-                    */
-                body: FormBody([
-                    {
-                        name: 'avatar',
-                        value: /* 文件Blob/File */,
-                        fileName: 'myavatar.jpg'
-                    }
-                ])
-            },
+             * HTTP请求携带的消息体，除了支持fetch的BodyInit，还增加了JsonBody(object)
+             * 和FormBody(FormElement[])。如果是动态变化的，则使用函数方式返回。
+             */
+            body: FormBody([
+                {
+                    name: 'avatar',
+                    value: /* 文件Blob/File */,
+                    fileName: 'myavatar.jpg'
+                }
+            ])
+        }
+    },
+
+    /* 创建HTTP API请求 */
+    const request = httpClientRequest(
+        /* HttpClient对象 */
+        myClient,
+        /* HttpRequest对象 */
+        myApi,
+        /* HttpConfig对象 */
+        {
+            /* 修改请求中的config */
+        },
+        /* HttpRequestHandlers对象 */
+        {
             /* 响应处理，data根据Content-Type已转换成string、FormData、JSON对象或者blob。 */
             response: (data: any, request: HttpRequest) => {
                 let { name } = data;
@@ -148,78 +195,47 @@ https://github.com/risma-cc/lemjs
             mock: (request: HttpRequest) => {
                 return { answer: 'Hello Jack' };
             }
-        },
+        }
     }
 
-### 创建HTTP服务Client
-
-    const myClient = makeHttpClient({
-        /* 接口定义 */
-        httpAPIs: myAPIs,
-        /* 统一的URL前缀 */
-        baseURL: 'http://a.b.c/api',
-        /* 默认URL参数。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
-        defaultParams: () => {
-            return { 'ver': myVersion };
-        },
-        /* 默认配置选项。如果定义了，所有请求都自动加上。如果是动态变化的，则使用函数方式返回。 */
-        defaultConfig: { },
-        /* 请求拦截器 */
-        requestInterceptors: [
-            (request: HttpRequest) => {
-                /* 请求数据处理，可以修改返回的请求数据。如果返回false，则取消请求。 */
-                return request;
-            }
-        ],
-        /* 响应拦截器 */
-        responseInterceptors: [
-            (response: any, request: HttpRequest) => {
-                /* 响应结果处理，可以修改返回的响应数据。 */
-                return response;
-            },
-            (response: any, request: HttpRequest) => {
-                /* 可以抛出异常终止响应处理，转为错误处理。 */
-                throw new Error('I am tired');
-            },
-            async (response: any, request: HttpRequest) => {
-                /* 如果是异步方法，可以返回Promise.reject，转为错误处理 */
-                return Promise.reject('I am sad');
-            },
-        ],
-        /* 错误拦截器 */
-        errorInterceptors: [
-            (error: any, request: HttpRequest) => {
-                /* 错误处理，可以修改返回的错误信息。 */
-                return error;
-            }
-        ],
-    });
+    /* 发送请求与响应处理 */
+    request.send()
+        .then((data) => {})
+        .catch((err) => {});
 
 ### 使用HTTP服务接口
 
     /*
-     * 接口的URL路径、URL参数、配置选项在HttpAPI以及fetch都可以指定，还有HttpClient中的默认值，他们会自动合并。
-     * 当同一属性出现多次时，该属性的取值优先级排序是：先fetch、再HttpAPI、最后HttpClient默认值。
+     * 接口的URL参数、配置选项在HttpClient、HttpRequest、HttpConfig都可以指定，他们会自动合并。
+     * 当同一属性出现多次时，优先以HttpConfig为准，其次是HttpRequest，最后是HttpClient。
+     * 另外，对于一些常用的请求格式，可以使用如下函数创建，省去在定义API时对config的定义。
      */
-    let result = await myClient.fetch('hello', { params: { 'myname': 'Michael' }});
+    let result = await httpClientGet(myClient, myApi).send();
+    let result = await httpClientPost(myClient, myApi).send();
+    let result = await httpClientPostJson(myClient, myApi).send();
 
-### 自定义Service
-绝大部分实际情况中，Model数据都是先调用HTTP服务接口，根据响应数据来进行更新的。因此，建议定义一层Service方法来实现不同的业务逻辑，以封装HTTP API调用以及Model数据更新，并在View层（React组件）调用。
+### 自定义Service类
+绝大部分实际情况中，Model数据都是先调用HTTP服务接口，根据响应数据来进行更新的。因此，建议定义一层Service类来实现不同的业务逻辑，以封装HTTP API调用以及Model数据更新，并在View层（React组件）调用。
 
 *svc.ts*
 
-    export async function hello(myName: string) {
-        let result = await myClient.fetch('login', {
-            params: {
-                'myName': myName,
-            }
-        });
-        myModel.update('set', { answer: result.answer });
+    import myClient from './http/client';
+
+    class Svc {
+        static async hello(myName: string) {
+            let result = await httpClientPost(myClient, {
+                url: '/hello',
+                config: {
+                    body: JsonBody({ myName: myName })
+                }
+            }).send();
+            myModel.update('set', { answer: result.answer });
+        }
     }
 
 *page.ts*
 
-    import * as svc from './svc';
+    import Svc from './svc';
     
     export default () => {
         const { answer } = useModel(myModel);
@@ -227,7 +243,7 @@ https://github.com/risma-cc/lemjs
         return (
             <div>
                 <h1>{answer}</h1>
-                <a onClick={{() => svc.hello('Ryan')}>Hello</a>
+                <a onClick={{() => Svc.hello('Ryan')}>Hello</a>
             </div>
         );
     }

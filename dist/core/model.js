@@ -4,40 +4,31 @@
 export function makeModel(init) {
     return new ModelImpl(init);
 }
-var ModelImpl = /** @class */ (function () {
-    function ModelImpl(init) {
+class ModelImpl {
+    state;
+    _update;
+    _callbacks;
+    constructor(init) {
         this.state = init.state;
-        this._query = init.query;
         this._update = init.update;
-        this._eventUpdated = new Set();
+        this._callbacks = new Set();
     }
-    ModelImpl.prototype.get = function () {
+    get() {
         return this.state;
-    };
-    ModelImpl.prototype.query = function (action, payload) {
-        try {
-            return this._query[action](payload, this.state);
-        }
-        catch (error) {
-            return null;
-        }
-    };
-    ModelImpl.prototype.update = function (action, payload) {
-        var _this = this;
-        try {
-            this.state = this._update[action](payload, this.state);
-            this._eventUpdated.forEach(function (e) {
-                e(_this.state);
+    }
+    update(action, payload) {
+        const f = this._update[action];
+        if (typeof f === 'function') {
+            this.state = (f) && f(payload, this.state);
+            this._callbacks.forEach((cb) => {
+                cb(this.state);
             });
         }
-        catch (error) {
-        }
-    };
-    ModelImpl.prototype.subscribe = function (callback) {
-        this._eventUpdated.add(callback);
-    };
-    ModelImpl.prototype.unsubscribe = function (callback) {
-        this._eventUpdated.delete(callback);
-    };
-    return ModelImpl;
-}());
+    }
+    subscribe(callback) {
+        this._callbacks.add(callback);
+    }
+    unsubscribe(callback) {
+        this._callbacks.delete(callback);
+    }
+}

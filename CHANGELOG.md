@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## V0.4.0
+### Features
+- HTTP: HTTP request with abort controller
+- HTTP: Class HttpClientRequest integrates HttpAPI and abort controller
+
+### Changed
+- HTTP: Refactor HttpClient
+
+### Removed
+- HTTP: HttpAPI
+- Model: query in model
+
 ## V0.3.1 | 2021-12-08
 ### Fixed
 - Code small
